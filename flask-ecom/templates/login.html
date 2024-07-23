@@ -1,0 +1,146 @@
+<html>
+<style>
+body {
+   font-family: Arial, sans-serif;
+}
+
+.container {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   height: 100vh;
+   background-color: #f0f0f0;
+}
+
+.left-column {
+   width: 50%;
+   height: 100%;
+   background-color: #fff;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   padding: 50px;
+   box-sizing: border-box;
+}
+
+.right-column {
+   width: 50%;
+   height: 100%;
+   background-color: #fff;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   padding: 50px;
+   box-sizing: border-box;
+}
+
+h2 {
+   color: #333;
+   text-align: center;
+}
+
+form {
+   display: flex;
+   flex-direction: column;
+   width: 100%;
+   max-width: 400px;
+}
+
+input {
+   margin: 10px 0;
+   padding: 10px;
+   font-size: 18px;
+   border: 1px solid #ccc;
+}
+
+button {
+   background-image: linear-gradient(to right, #F28123, #F28123);
+   border: none;
+   color: white;
+   padding: 15px 32px;
+   text-align: center;
+   text-decoration: none;
+   display: inline-block;
+   font-size: 16px;
+   margin: 4px 2px;
+   cursor: pointer;
+}
+
+.login_box_img {
+    margin-right: -30px;
+    position: relative;
+}
+.login_box_img img {
+    width: 100%;
+}
+.login_box_img:before {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    content: "";
+    background: #000;
+    opacity: .5;
+}
+.login_box_img .hover {
+    position: absolute;
+    top: 50%;
+    left: 0px;
+    text-align: center;
+    width: 100%;
+    transform: translateY(-50%);
+}
+.login_box_img .hover h1 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 15px;
+}
+.login_box_img .hover p {
+    max-width: 380px;
+    margin: 0px auto 25px;
+    color: #fff;
+}
+
+.right-column a{
+    font-size: 15px;
+    color: #777777;
+    display: block;
+}
+
+</style>
+
+<body>
+   <div class="container">
+
+       <div class="left-column">
+            <div class="login_box_img">
+                <img class="img-fluid" src="static/img/login.jpg" alt="">
+                <div class="hover">
+                    <h1>New to our website?</h1>
+                    <p>Start your journey with us today and unlock exclusive benefits by signing up.</p>
+                    <button onclick="location.href='register'">Create an Account</button>
+                </div>
+            </div>
+       </div>
+       
+       <div class="right-column">
+           <h2>LOG IN TO ENTER</h2>
+           <form method="POST" action="{{ url_for('login') }}">
+                <label for="username">Username</label>
+                {{ form.username(class="form-control", id="username") }}
+                <label for="password">Password</label>
+                {{ form.password(class="form-control", id="password") }}
+                <div class="form-check">
+                    {{ form.remember(class="form-check-input", id="remember") }}
+                    <label class="form-check-label" for="remember">Keep me logged in</label>
+                </div>
+                <button type="submit" class="btn btn-primary">LOG IN</button>
+            </form>
+           <a href="#">Forgot Password?</a>
+       </div>
+   </div>
+</body>
+</html>
