@@ -171,6 +171,11 @@ def admin():
 def list_orders():
     return render_template('list_orders.html')
 
+@app.route('/add_product')
+def add_product():
+    return render_template('add_product.html')
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
