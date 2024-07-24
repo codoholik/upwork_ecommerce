@@ -1,13 +1,17 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length
+from flask import Flask, render_template, redirect, url_for, request, flash
+
+
+
 
 # Create the app
 app = Flask(__name__)
 # Configure the SQLite database, relative to the app instance folder
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
+app.secret_key = 'f32a9947143fe06beca3efc0b8032226'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["WTF_CSRF_ENABLED"] = False
 db = SQLAlchemy(app)
@@ -36,7 +40,7 @@ class Cart(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('carts', lazy=True))
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), primary_key=True)
-    products = db.relationship('Product', secondary='cart_product', backref=db.backref('carts', lazy=True))
+    products = db.relationship('Product', backref=db.backref('carts', lazy=True))
     quantity = db.Column(db.Integer, nullable=False, default=1)
 
     def __repr__(self):
@@ -72,41 +76,16 @@ class Category(db.Model):
     def __repr__(self):
         return f'<Category {self.name}>'
 
-# Flask Forms using FlaskForm and WTForms
-
-# Define LoginForm 
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
-    remember = BooleanField('Remember Me')
 
 # Define RegisterForm
 class RegisterForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=10)])
+    username = StringField('Username', validators=[DataRequired(), Length(max=30)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=100)])
-    phone = IntegerField('Phone', validators=[DataRequired()])
+    phone = IntegerField('Phone', validators=[DataRequired(), Length(min=10, max=10)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4, max=10)])
 
 # Routes and handle form submission
 
-# Route to render login page and handle form submission
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-        remember = form.remember.data
-
-        user = User.query.filter_by(username=username).first()
-        if user and password == user.password:
-            if remember:
-                pass
-            return redirect(url_for('index'))
-        else:
-            return redirect(url_for('login'))
-
-    return render_template('login.html', form=form)
 
 # Route to render register page and handle form submission
 @app.route('/register', methods=['GET', 'POST'])
@@ -119,56 +98,122 @@ def register():
         phone = form.phone.data
         password = form.password.data
 
-        # Create a new user instance
-        new_user = User(username=username, email=email, phone=phone, password=password)
-        
-        # Add new user to the database
-        db.session.add(new_user)
-        db.session.commit()
+        # Check if username or email already exists
+        existing_user = User.query.filter_by(username=username).first()
+        existing_email = User.query.filter_by(email=email).first()
 
-        # Redirect to login page after successful registration
-        return redirect(url_for('login'))
+        if existing_user:
+            flash('Username already exists. Please choose a different one.', category='error')
+        elif existing_email:
+            flash('Email address already registered. Please use a different email.', category='error')
+        else:
+            # Create a new user instance
+            new_user = User(username=username, email=email, phone=phone, password=password)
+            
+
+            # Add new user to the database
+            db.session.add(new_user)
+            db.session.commit()
+
+            # Redirect to login page after successful registration
+            flash('Your account has been successfully registered!', category='success')
+            return redirect(url_for('login'))
     
     # Render the register page template with form
     return render_template('register.html', form=form)
+
+
+
+# Define LoginForm 
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
+    remember = BooleanField('Remember Me')
+
+
+# Route to render login page and handle form submission
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        remember = form.remember.data
+
+        # Check if the username exists in the database
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            # Check if the password matches
+            if password == user.password:
+                flash('Login successful!', category='success')
+                # Redirect to the home page 
+                return redirect(url_for('index'))
+            else:
+                flash('Login unsuccessful. Please check your password.', category='error')
+        else:
+            flash('Login unsuccessful. User not found.', category='error')
+
+    return render_template('login.html', form=form)
+
+
 
 @app.route('/about')
 def about():
     return render_template("about.html")
 
+
+
 @app.route('/cart')
 def cart():
     return render_template('cart.html')
+
+
 
 @app.route('/checkout')
 def checkout():
     return render_template('checkout.html')
 
+
+
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+
+
 
 @app.route('/shop')
 def shop():
     return render_template('shop.html')
 
+
+
 @app.route('/single_product')
 def single_product():
     return render_template('single-product.html')
+
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
+
 @app.route('/admin')
 def admin():
     return render_template('admin_dashboard.html')
+
+
 
 @app.route('/list_orders')
 def list_orders():
     return render_template('list_orders.html')
 
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host="0.0.0.0", port=9080, debug=True)

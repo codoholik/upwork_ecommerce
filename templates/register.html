@@ -1,102 +1,200 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
+    
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+    }
 
-<head>
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+    }
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    .left-column {
+        width: 50%;
+        height: 100%;
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 50px;
+        box-sizing: border-box;
+    }
 
-    <title>SB Admin 2 - Register</title>
+    .right-column {
+        width: 50%;
+        height: 100%;
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 50px;
+        box-sizing: border-box;
+    }
 
-    <!-- Custom fonts for this template-->
-    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
+    h2 {
+        color: #333;
+        text-align: center;
+    }
 
-    <!-- Custom styles for this template-->
-    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    form {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 400px;
+    }
 
-</head>
+    input {
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 18px;
+        border: 1px solid #ccc;
+    }
 
-<body class="bg-gradient-primary">
+    button {
+        background-image: linear-gradient(to right, #F28123, #F28123);
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+    }
 
-    <div class="container">
+    .login_box_img {
+        margin-right: -30px;
+        position: relative;
+    }
+    .login_box_img img {
+        width: 100%;
+    }
+    .login_box_img:before {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        content: "";
+        background: #000;
+        opacity: .5;
+    }
+    .login_box_img .hover {
+        position: absolute;
+        top: 50%;
+        left: 0px;
+        text-align: center;
+        width: 100%;
+        transform: translateY(-50%);
+    }
+    .login_box_img .hover h1 {
+        font-size: 24px;
+        color: #fff;
+        margin-bottom: 15px;
+    }
+    .login_box_img .hover p {
+        max-width: 380px;
+        margin: 0px auto 25px;
+        color: #fff;
+    }
 
-        <div class="card o-hidden border-0 shadow-lg my-5">
-            <div class="card-body p-0">
-                <!-- Nested Row within Card Body -->
-                <div class="row">
-                    <div class="col-lg-5 d-none d-lg-block bg-register-image"></div>
-                    <div class="col-lg-7">
-                        <div class="p-5">
-                            <div class="text-center">
-                                <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
-                            </div>
-                            <form class="user">
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user" id="exampleFirstName"
-                                            placeholder="First Name">
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <input type="text" class="form-control form-control-user" id="exampleLastName"
-                                            placeholder="Last Name">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <input type="email" class="form-control form-control-user" id="exampleInputEmail"
-                                        placeholder="Email Address">
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <input type="password" class="form-control form-control-user"
-                                            id="exampleInputPassword" placeholder="Password">
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <input type="password" class="form-control form-control-user"
-                                            id="exampleRepeatPassword" placeholder="Repeat Password">
-                                    </div>
-                                </div>
-                                <a href="login.html" class="btn btn-primary btn-user btn-block">
-                                    Register Account
-                                </a>
-                                <hr>
-                                <a href="index.html" class="btn btn-google btn-user btn-block">
-                                    <i class="fab fa-google fa-fw"></i> Register with Google
-                                </a>
-                                <a href="index.html" class="btn btn-facebook btn-user btn-block">
-                                    <i class="fab fa-facebook-f fa-fw"></i> Register with Facebook
-                                </a>
-                            </form>
-                            <hr>
-                            <div class="text-center">
-                                <a class="small" href="forgot-password.html">Forgot Password?</a>
-                            </div>
-                            <div class="text-center">
-                                <a class="small" href="login.html">Already have an account? Login!</a>
-                            </div>
+    .right-column a{
+        font-size: 15px;
+        color: #777777;
+        display: block;
+    }
+
+    /* flash messages */
+    .flash {
+        padding: 20px;
+        margin: 20px;
+        }
+
+    .flash-error {
+        background-color: #ffa7ae;
+        color: #a02a36;
+    }
+
+    .flash-success {
+        background-color: #96faad;
+        color: #1c7530;
+    }
+
+    .header-icon {
+        margin-left: 1300px;
+        margin-top: 35px;
+    }
+
+    </style>
+
+<body>
+    <div class="header-icon">
+        <a class="home-icon" href="/">
+            <!-- <h4>Home</h4> -->
+            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 50 50">
+                <path d="M 25 1.0507812 C 24.7825 1.0507812 24.565859 1.1197656 24.380859 1.2597656 L 1.3808594 19.210938 C 0.95085938 19.550938 0.8709375 20.179141 1.2109375 20.619141 C 1.5509375 21.049141 2.1791406 21.129062 2.6191406 20.789062 L 4 19.710938 L 4 46 C 4 46.55 4.45 47 5 47 L 19 47 L 19 29 L 31 29 L 31 47 L 45 47 C 45.55 47 46 46.55 46 46 L 46 19.710938 L 47.380859 20.789062 C 47.570859 20.929063 47.78 21 48 21 C 48.3 21 48.589063 20.869141 48.789062 20.619141 C 49.129063 20.179141 49.049141 19.550938 48.619141 19.210938 L 25.619141 1.2597656 C 25.434141 1.1197656 25.2175 1.0507812 25 1.0507812 z M 35 5 L 35 6.0507812 L 41 10.730469 L 41 5 L 35 5 z"></path>
+            </svg>
+        </a>
+    </div>
+    
+   <div class="container">
+       <div class="right-column">
+           <h2>REGISTER</h2>
+           {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">
+                            {{ message }}
                         </div>
-                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Registeration Form -->
+           <form method="POST" action="{{ url_for('register') }}">
+                {{ form.csrf_token }}
+
+                <label for="username">Username</label>
+                {{ form.username(class="form-control", id="username") }}
+
+                <label for="email">Email</label>
+                {{ form.email(class="form-control", id="email") }}
+
+                <label for="phone">Phone</label>
+                {{ form.phone(class="form-control", id="phone") }}
+
+                <label for="password">Password</label>
+                {{ form.password(class="form-control", id="password") }}
+                
+                <button type="submit" class="btn btn-primary" id="submit">Sign Up</button>
+            </form>
+        </div>
+
+       <div class="left-column">
+            <div class="login_box_img">
+                <img class="img-fluid" src="static/img/login.jpg" alt="">
+                <div class="hover">
+                    <h1>Already have an account?</h1>
+                    <p>Sign in and start exploring!</p>
+                    <button onclick="location.href='login'">Click to Login</button>
                 </div>
             </div>
         </div>
-
-    </div>
-
-    <!-- Bootstrap core JavaScript-->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Core plugin JavaScript-->
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-
-    <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
-
+   </div>
 </body>
-
 </html>
+
+<script>
+    // const submit = document.getElementById('submit')
+    // submit.addEventListener('click', () => {
+    //     alert("Your account registered Successfully!")
+    //     console.log('success')
+    // })
+</script>
