@@ -14,11 +14,14 @@ db = SQLAlchemy(app)
 
 # Models
 class User(db.Model):
+    __tablename__ = 'users'
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     phone = db.Column(db.Integer, nullable=False)
     password = db.Column(db.String(8), nullable=False)
+    user_type = db.Column(db.Integer, nullable=False, default=1)
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
