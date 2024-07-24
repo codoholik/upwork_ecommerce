@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length
+from werkzeug.utils import secure_filename
+import os
 
 # Create the app
 app = Flask(__name__)
@@ -10,6 +12,9 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["WTF_CSRF_ENABLED"] = False
+app.config["UPLOAD_FOLDER"] = 'uploads'
+# Ensure the upload folder exists
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 db = SQLAlchemy(app)
 
 # Models
@@ -34,46 +39,46 @@ class Product(db.Model):
     def __repr__(self):
         return f"Product('{self.name}', '{self.price}')"
 
-class Cart(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref=db.backref('carts', lazy=True))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), primary_key=True)
-    products = db.relationship('Product', secondary='cart_product', backref=db.backref('carts', lazy=True))
-    quantity = db.Column(db.Integer, nullable=False, default=1)
+# class Cart(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+#     user = db.relationship('User', backref=db.backref('carts', lazy=True))
+#     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+#     products = db.relationship('Product', secondary='cart_product', backref=db.backref('carts', lazy=True))
+#     quantity = db.Column(db.Integer, nullable=False, default=1)
 
-    def __repr__(self):
-        return f"Cart('{self.user.username}')"
+#     def __repr__(self):
+#         return f"Cart('{self.user.username}')"
 
-# Order model
-class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref=db.backref('orders', lazy=True))
-    order_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-    total_amount = db.Column(db.Float, nullable=False)
+# # Order model
+# class Order(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+#     user = db.relationship('User', backref=db.backref('orders', lazy=True))
+#     order_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+#     total_amount = db.Column(db.Float, nullable=False)
 
-    def __repr__(self):
-        return f"Order('{self.id}', '{self.user.username}', '{self.total_amount}')"
+#     def __repr__(self):
+#         return f"Order('{self.id}', '{self.user.username}', '{self.total_amount}')"
 
-class Billing(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    order = db.relationship('Order', backref=db.backref('billings', lazy=True))
-    billing_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-    amount = db.Column(db.Float, nullable=False)
+# class Billing(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+#     order = db.relationship('Order', backref=db.backref('billings', lazy=True))
+#     billing_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+#     amount = db.Column(db.Float, nullable=False)
 
-    def __repr__(self):
-        return f"Billing('{self.order.id}', '{self.amount}')"
+#     def __repr__(self):
+#         return f"Billing('{self.order.id}', '{self.amount}')"
 
-# Category model
-class Category(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
+# # Category model
+# class Category(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(80), nullable=False)
+#     is_active = db.Column(db.Boolean, default=True)
 
-    def __repr__(self):
-        return f'<Category {self.name}>'
+#     def __repr__(self):
+#         return f'<Category {self.name}>'
 
 # Flask Forms using FlaskForm and WTForms
 
@@ -171,8 +176,27 @@ def admin():
 def list_orders():
     return render_template('list_orders.html')
 
-@app.route('/add_product')
+@app.route('/add_product', methods=['GET', 'POST'])
 def add_product():
+    if request.method == 'POST':
+        name = request.form['product_name']
+        description = request.form['description']
+        price = request.form['price']
+        quantity = request.form['qty']
+        file = request.files['product_img']
+        if file:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            image_url = file_path
+        else:
+            image_url = None
+
+        new_product = Product(name=name, description=description, price=price, quantity=quantity, image_url=image_url)
+        db.session.add(new_product)
+        db.session.commit()
+        return redirect(url_for('add_product'))
+    
     return render_template('add_product.html')
 
 
