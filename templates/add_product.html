@@ -1,0 +1,42 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}
+    Create a Product
+{% endblock %}
+
+{% block pageheading %}
+    Add a Product
+{% endblock %}
+
+{% block content %}
+
+    <div class="col-xl-12 col-md-12 mb-4">
+        <form class="row g-3" method="POST" action="{{ url_for('add_product') }}" enctype="multipart/form-data">
+            <div class="col-md-3">
+              <label for="product_name" class="form-label">Name</label>
+              <input type="text" class="form-control" id="product_name" name="product_name">
+            </div>
+            <div class="col-md-3">
+              <label for="price" class="form-label">Price</label>
+              <input type="tel" class="form-control" id="price" name="price">
+            </div>
+            <div class="col-md-3">
+              <label for="qty" class="form-label">Quantity</label>
+              <input type="tel" class="form-control" id="qty" name="qty">
+            </div>
+            <div class="col-md-3">
+                <label for="product_img" class="form-label">Image</label>
+                <input type="file" class="form-control" id="product_img" name="product_img">
+            </div>
+            <div class="col-md-12">
+              <label for="description" class="form-label">Description</label>
+              <textarea type="text" class="form-control" id="description" name="description"></textarea>
+            </div>
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-primary">Sign in</button>
+            </div>
+          </form>
+    </div>
+
+{% endblock %}
+
