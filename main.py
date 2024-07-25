@@ -239,8 +239,25 @@ def add_product():
     return render_template('add_product.html')
 
 
+@app.route('/create_user', methods=['GET', 'POST'])
+def create_user():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        mobile = request.form['mobile']
+        password = request.form['password']
+        user_type = request.form['user_type']
+        # create a user
+        new_user = User(username=username, email=email, phone=mobile, password=password, user_type=user_type)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('create_user'))
+
+    return render_template('create_user.html')
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    # app.run(debug=True)
-    app.run(host="0.0.0.0", port=9080, debug=True)
+    app.run(debug=True)
+    # app.run(host="0.0.0.0", port=9080, debug=True)

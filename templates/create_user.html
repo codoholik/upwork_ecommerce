@@ -1,0 +1,46 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}
+    Admin Create User
+{% endblock %}
+
+{% block pageheading %}
+    User Management
+{% endblock %}
+
+{% block content %}
+
+<div class="col-xl-12 col-md-12 mb-4">
+    <form class="row g-3" method="POST" action="{{ url_for('create_user') }}">
+        <div class="col-md-4">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" name="username">
+        </div>
+        <div class="col-md-4">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" name="email">
+        </div>
+        <div class="col-md-4">
+          <label for="mobile" class="form-label">Mobile</label>
+          <input type="tel" class="form-control" id="mobile" name="mobile">
+        </div>
+        <div class="col-md-6">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password">
+        </div>
+        <div class="col-md-6">
+          <label for="user_type" class="form-label">User Type</label>
+          <select class="form-control" id="user_type" name="user_type">
+            <option value="1">General</option>
+            <option value="2">Admin</option>
+          </select>
+        </div>
+        <div class="col-md-12" style="margin-top: 5px;">
+          <button type="submit" class="btn btn-primary">Create User</button>
+        </div>
+      </form>
+</div>
+
+
+{% endblock %}
+
