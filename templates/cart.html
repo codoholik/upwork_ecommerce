@@ -30,7 +30,6 @@
                         <thead class="cart-table-head">
                             <tr class="table-head-row">
                                 <th class="product-remove"></th>
-                                <th class="product-image">Product Image</th>
                                 <th class="product-name">Name</th>
                                 <th class="product-price">Price</th>
                                 <th class="product-quantity">Quantity</th>
@@ -47,15 +46,12 @@
                             {% for item in cart_items %}
                                 <tr class="table-body-row">
                                     <td class="product-remove"><a href="#"><i class="far fa-window-close"></i></a></td>
-                                    <td class="product-name">{{ item.product.product_name }}</td>
-                                    <td class="product-price">${{ item.product.price }}</td>
+                                    <td class="product-name">{{ item.product_name }}</td>
+                                    <td class="product-price">${{ item.price }}</td>
                                     <td class="product-quantity">
-                                        <form method="POST" action="{{ url_for('update_cart', product_id=item.product.id) }}">
-                                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
-                                        </form>
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
                                     </td>
-                                    <td class="product-total">${{ item.quantity * item.product.price }}</td>
+                                    <td class="product-total">${{ item.total }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

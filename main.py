@@ -61,8 +61,8 @@ class Cart(db.Model):
 
     user = db.relationship('User', backref=db.backref('carts', lazy=True))
 
-    def __repr__(self):
-        return f"Cart('{self.user.username}', '{self.product.product_name}', '{self.quantity}')"
+    # def __repr__(self):
+    #     return f"Cart('{self.user.username}', '{self.product.product_name}', '{self.quantity}')"
 
 # # Order model
 # class Order(db.Model):
@@ -228,30 +228,32 @@ def add_product():
 
 @app.route('/add_cart/<int:product_id>', methods=['POST'])
 def add_cart(product_id):
-    if 'user_id' not in session:
+    if 'user_id' in session:
+
+        user_id = session['user_id']
+        quantity = int(request.form.get('quantity', 1))
+
+        # Get the product by product_id
+        product = Product.query.get_or_404(product_id)
+
+        # Create a new Cart object with product_name and quantity
+        cart_item = Cart(
+            user_id=user_id,
+            product_name=product.product_name,
+            quantity=quantity,
+            price=product.price
+        )
+        print(cart_item)
+
+        db.session.add(cart_item)
+        db.session.commit()
+
+        flash('Item added to cart successfully!', 'success')
+        return redirect(url_for('cart'))
+    
+    else:
         flash('You must be logged in to add items to cart.', 'warning')
         return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    quantity = int(request.form.get('quantity', 1))
-
-    # Get the product by product_id
-    product = Product.query.get_or_404(product_id)
-
-    # Create a new Cart object with product_name and quantity
-    cart_item = Cart(
-        user_id=user_id,
-        product_name=product.product_name,
-        quantity=quantity,
-        price=product.price
-    )
-    print(cart_item)
-
-    db.session.add(cart_item)
-    db.session.commit()
-
-    flash('Item added to cart successfully!', 'success')
-    return redirect(url_for('cart'))
 
 
 
@@ -265,11 +267,11 @@ def cart():
     if 'user_id' in session:
         user_id = session.get('user_id')
         # extract cart objects through user id (logged_in)
-        cart_items = Cart.query.filter_by(user_id=user_id).all()
+        cart_objects = Cart.query.filter_by(user_id=user_id).all()
         print("cart objects", cart)
 
         # Calculate total price and format cart items for display
-        for item in cart_items:
+        for item in cart_objects:
             item_total = item.quantity * item.price
             total_price += item_total
             
