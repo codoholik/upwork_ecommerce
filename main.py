@@ -1,3 +1,4 @@
+from flask import session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField
@@ -143,16 +144,16 @@ def login():
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-        remember = form.remember.data
-
         # Check if the username exists in the database
         user = User.query.filter_by(username=username).first()
-
         if user:
             # Check if the password matches
             if password == user.password:
+                session['username'] = user.username
                 flash('Login successful!', category='success')
-                # Redirect to the home page 
+                if int(user.user_type) == 2:
+                    return redirect(url_for('admin'))
+                # Redirect to the home page
                 return redirect(url_for('index'))
             else:
                 flash('Login unsuccessful. Please check your password.', category='error')
@@ -207,7 +208,7 @@ def index():
 
 @app.route('/admin')
 def admin():
-    return render_template('admin_dashboard.html')
+    return render_template('admin_dashboard.html', username=session.get('username'))
 
 
 
