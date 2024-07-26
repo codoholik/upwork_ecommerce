@@ -36,16 +36,16 @@
                                 <th class="product-total">Total</th>
                             </tr>
                             <tbody>
-                                <!-- <tr class="table-body-row">
-									<td class="product-remove"><a href="#"><i class="far fa-window-close"></i></a></td>
-									<td class="product-name">Strawberry</td>
-									<td class="product-price">$85</td>
-									<td class="product-quantity"><input type="number" placeholder="0"></td>
-									<td class="product-total">1</td>
-								</tr> -->
                             {% for item in cart_items %}
                                 <tr class="table-body-row">
-                                    <td class="product-remove"><a href="#"><i class="far fa-window-close"></i></a></td>
+                                    <!-- <td class="product-remove"><a href="#"><i class="far fa-window-close"></i></a></td> -->
+                                    <td class="product-remove">
+                                        <form method="POST" action="{{ url_for('remove_cart_item', cart_id=item.id) }}" style="display:inline;">
+                                            <button type="submit" class="btn btn-link">
+                                                <i class="far fa-window-close"></i>
+                                            </button>
+                                        </form>
+                                    </td>
                                     <td class="product-name">{{ item.product_name }}</td>
                                     <td class="product-price">${{ item.price }}</td>
                                     <td class="product-quantity">
