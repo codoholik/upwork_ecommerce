@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 from flask import session
-=======
 import traceback
->>>>>>> ede3ec6c8c3f5cf8d3ac3a02adc0af1b2fcb62bc
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField
