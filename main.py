@@ -190,6 +190,14 @@ def login():
 
 
 
+@app.route('/logout')
+def logout():
+    # Clear the session to log out the user
+    session.pop('user_id', None)
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('index'))
+
+
 
 @app.route('/uploads/<path:filename>')
 def serve_upload(filename):
@@ -238,19 +246,28 @@ def add_cart(product_id):
         # Get the product by product_id
         product = Product.query.get_or_404(product_id)
 
-        # Create a new Cart object with product_name and quantity
-        cart_item = Cart(
-            user_id=user_id,
-            product_name=product.product_name,
-            quantity=quantity,
-            price=product.price
-        )
-        print(cart_item)
+        # Check if the item already exists in the cart
+        existing_item = Cart.query.filter_by(user_id=user_id, product_name=product.product_name).first()
 
-        db.session.add(cart_item)
+        if existing_item:
+            # If the item exists, update the quantity
+            existing_item.quantity += 1
+            existing_item.price = product.price
+            flash('Item quantity updated in cart!', 'success')
+        else:
+            # If the item does not exist, add it to the cart
+            cart_item = Cart(
+                user_id=user_id,
+                product_name=product.product_name,
+                quantity=quantity,
+                price=product.price
+            )
+
+            db.session.add(cart_item)
+            flash('Item added to cart successfully!', 'success')
+
+        # Commit changes to the database
         db.session.commit()
-
-        flash('Item added to cart successfully!', 'success')
         return redirect(url_for('cart'))
     
     else:
@@ -372,4 +389,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     # app.run(debug=True)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
