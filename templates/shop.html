@@ -45,8 +45,9 @@
 					<h3>{{ product.product_name }}</h3>
 					<p class="product-price"><span>Per Kg</span> ${{ product.price }} </p>
 					<form method="POST" action="{{ url_for('add_cart', product_id=product.id) }}">
-						<button type="submit" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
-						<!-- <a href="shop" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</a> -->
+						<a href="#" class="cart-btn" onclick="addToCart({{ product.id }})">
+							<i class="fas fa-shopping-cart"></i> Add to Cart
+						</a>
 					</form>
 				</div>
 			</div>
@@ -71,6 +72,17 @@
 	</div>
 </div>
 <!-- end products -->
+
+<script>
+    function addToCart(productId) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/add_cart/' + productId;
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
 
 
 {% endblock %}static

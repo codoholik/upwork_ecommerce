@@ -9,6 +9,7 @@ from wtforms.validators import DataRequired, Length, Regexp
 import os
 from flask_migrate import Migrate
 
+
 # Create the app
 app = Flask(__name__)
 # Configure the SQLite database, relative to the app instance folder
@@ -24,6 +25,7 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 db = SQLAlchemy(app)
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
+# keeping user sessions
 
 
 # Models
@@ -229,8 +231,7 @@ def add_product():
 @app.route('/add_cart/<int:product_id>', methods=['POST'])
 def add_cart(product_id):
     if 'user_id' in session:
-
-        user_id = session['user_id']
+        user_id = session.get('user_id')
         quantity = int(request.form.get('quantity', 1))
 
         # Get the product by product_id
@@ -260,38 +261,50 @@ def add_cart(product_id):
 # render added items to cart in cart.html
 @app.route('/cart')
 def cart():
-    print("cart enter func")
-    cart_items = []
+    if 'user_id' not in session:
+        flash('You must be logged in to view the cart.', 'warning')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    cart_items = Cart.query.filter_by(user_id=user_id).all()
     total_price = 0
 
-    if 'user_id' in session:
-        user_id = session.get('user_id')
-        # extract cart objects through user id (logged_in)
-        cart_objects = Cart.query.filter_by(user_id=user_id).all()
-        print("cart objects", cart)
+    # Build a list of cart item details to pass to the template
+    cart_list = []
+    for item in cart_items:
+        item_total = item.quantity * item.price
+        total_price += item_total
+        cart_list.append({
+            'id': item.id,
+            'product_name': item.product_name,
+            'price': item.price,
+            'quantity': item.quantity,
+            'total': item_total
+        })
 
-        # Calculate total price and format cart items for display
-        for item in cart_objects:
-            item_total = item.quantity * item.price
-            total_price += item_total
-            
-            # Create a dictionary for each item with required details
-            cart_item = {
-                'product_name': item.product_name,
-                'quantity': item.quantity,
-                'price': item.price,
-                'total': item_total
-            }
-            cart_items.append(cart_item)
+    return render_template('cart.html', cart_items=cart_list, total_price=total_price)
 
-            print("cart_items:", cart_items)
 
+
+# remove items from the  cart through cart id
+@app.route('/remove_cart_item/<int:cart_id>', methods=['POST'])
+def remove_cart_item(cart_id):
+    if 'user_id' not in session:
+        flash('You must be logged in to remove items from cart.', 'warning')
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+
+    # Remove the item from the cart for the current user
+    cart_item = Cart.query.filter_by(user_id=user_id, id=cart_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
+        flash('Item removed from cart successfully!', 'success')
     else:
-        print("cart session not found")
-        traceback.print_exc()
-
-    return render_template('cart.html', cart_items=cart_items, total_price=total_price)
-
+        flash('Item not found in cart.', 'error')
+    
+    return redirect(url_for('cart'))
 
 
 
@@ -341,4 +354,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     # app.run(debug=True)
-    app.run(host="0.0.0.0", port=4000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
