@@ -374,8 +374,23 @@ def users_list():
     return render_template('users_list.html', users=users, username=session.get('username'))
 
 
-@app.route('/user_profile/<int:user_id>', methods=['GET'])
+@app.route('/user_profile/<int:user_id>', methods=['GET', 'POST'])
 def user_profile(user_id):
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        phone = request.form['phone']
+        user_type = int(request.form['user_type'])
+        user = User.query.filter_by(id=user_id).first()
+        user.username = username
+        user.email = email
+        user.phone = phone
+        user.user_type = user_type
+        db.session.add(user)
+        db.session.commit()
+        session['username'] = username
+        return redirect(url_for('user_profile', user_id=user_id))
+    
     user = User.query.filter_by(id=user_id).first()
     return render_template('user_profile.html', user=user)
 
