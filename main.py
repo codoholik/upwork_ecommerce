@@ -175,6 +175,7 @@ def login():
             if password == user.password:
                 # Store the user id in the session
                 session['user_id'] = user.id
+                session['username'] = user.username
                 flash('Login successful!', category='success')
                 if int(user.user_type) == 2:
                     return redirect(url_for('admin'))
@@ -224,7 +225,7 @@ def add_product():
         db.session.commit()
         return redirect(url_for('add_product'))
     
-    return render_template('add_product.html')
+    return render_template('add_product.html', username=session.get('username'))
 
 
 
@@ -346,7 +347,7 @@ def admin():
 
 @app.route('/list_orders')
 def list_orders():
-    return render_template('list_orders.html')
+    return render_template('list_orders.html', username=session.get('username'))
 
 
 
@@ -364,13 +365,19 @@ def create_user():
         db.session.commit()
         return redirect(url_for('create_user'))
 
-    return render_template('create_user.html')
+    return render_template('create_user.html', username=session.get('username'))
 
 
 @app.route('/users_list')
 def users_list():
     users = User.query.all()
-    return render_template('users_list.html', users=users)
+    return render_template('users_list.html', users=users, username=session.get('username'))
+
+
+@app.route('/user_profile/<int:user_id>', methods=['GET'])
+def user_profile(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    return render_template('user_profile.html', user=user)
 
 
 if __name__ == '__main__':

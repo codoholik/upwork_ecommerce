@@ -41,7 +41,7 @@
                                 </button>
                                 <div class="dropdown-menu animated--fade-in"
                                     aria-labelledby="dropdownMenuButton">
-                                    <a class="dropdown-item" href="#">Profile</a>
+                                    <a class="dropdown-item" href="{{ url_for('user_profile', user_id=user.id) }}">Profile</a>
                                 </div>
                             </div>                            
                         </td>
