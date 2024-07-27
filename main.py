@@ -173,12 +173,8 @@ def login():
         if user:
             # Check if the password matches
             if password == user.password:
-<<<<<<< HEAD
-                session['username'] = user.username
-=======
                 # Store the user id in the session
                 session['user_id'] = user.id
->>>>>>> ede3ec6c8c3f5cf8d3ac3a02adc0af1b2fcb62bc
                 flash('Login successful!', category='success')
                 if int(user.user_type) == 2:
                     return redirect(url_for('admin'))
@@ -369,6 +365,12 @@ def create_user():
         return redirect(url_for('create_user'))
 
     return render_template('create_user.html')
+
+
+@app.route('/users_list')
+def users_list():
+    users = User.query.all()
+    return render_template('users_list.html', users=users)
 
 
 if __name__ == '__main__':
