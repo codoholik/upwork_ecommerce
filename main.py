@@ -1,10 +1,12 @@
+from pprint import pprint
+import random
 from flask import session
 import traceback
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length
-from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory, session
+from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory, session, jsonify
 from werkzeug.utils import secure_filename
 from wtforms.validators import DataRequired, Length, Regexp
 import os
@@ -53,6 +55,8 @@ class Product(db.Model):
     def __repr__(self):
         return f"Product('{self.name}', '{self.price}')"
 
+
+
 class Cart(db.Model):
     __tablename__ = 'cart'
 
@@ -64,29 +68,32 @@ class Cart(db.Model):
 
     user = db.relationship('User', backref=db.backref('carts', lazy=True))
 
-    # def __repr__(self):
-    #     return f"Cart('{self.user.username}', '{self.product.product_name}', '{self.quantity}')"
+    
 
-# # Order model
-# class Order(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-#     user = db.relationship('User', backref=db.backref('orders', lazy=True))
-#     order_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-#     total_amount = db.Column(db.Float, nullable=False)
+class Billing(db.Model):
+    __tablename__ = 'billing'
 
-#     def __repr__(self):
-#         return f"Order('{self.id}', '{self.user.username}', '{self.total_amount}')"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    full_name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    postal_code = db.Column(db.String(20), nullable=False)
 
-# class Billing(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-#     order = db.relationship('Order', backref=db.backref('billings', lazy=True))
-#     billing_date = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-#     amount = db.Column(db.Float, nullable=False)
 
-#     def __repr__(self):
-#         return f"Billing('{self.order.id}', '{self.amount}')"
+class Order(db.Model):
+    __tablename__ = 'order'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    billing_id = db.Column(db.Integer, db.ForeignKey('billing.id'))
+    product_name = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    order_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+
 
 # # Category model
 # class Category(db.Model):
@@ -107,6 +114,23 @@ class RegisterForm(FlaskForm):
         Regexp('^[0-9]+$', message='Phone number must contain only digits.')
     ])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4, max=10)])
+
+
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
+    remember = BooleanField('Remember Me')
+
+
+class BillingForm(FlaskForm):
+    full_name = StringField('Full Name', validators=[DataRequired()])
+    phone = StringField('Phone', validators=[DataRequired(), Regexp(r'^\+?1?\d{9,15}$', message="Invalid phone number")])
+    address = StringField('Address', validators=[DataRequired()])
+    country = StringField('Country', validators=[DataRequired()])
+    city = StringField('City', validators=[DataRequired()])
+    postal_code = StringField('Postal Code', validators=[DataRequired(), Regexp(r'^\d{5}(-\d{4})?$', message="Invalid postal code")])
+
 
 # Routes and handle form submission
 
@@ -153,12 +177,6 @@ def register():
     return render_template('register.html', form=form)
 
 
-
-# Define LoginForm 
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
-    remember = BooleanField('Remember Me')
 
 
 # Route to render login page and handle form submission
@@ -252,8 +270,9 @@ def add_cart(product_id):
         if existing_item:
             # If the item exists, update the quantity
             existing_item.quantity += 1
-            existing_item.price = product.price
+            existing_item.price += product.price
             flash('Item quantity updated in cart!', 'success')
+            db.session.add(existing_item)
         else:
             # If the item does not exist, add it to the cart
             cart_item = Cart(
@@ -290,14 +309,17 @@ def cart():
     # Build a list of cart item details to pass to the template
     cart_list = []
     for item in cart_items:
-        item_total = item.quantity * item.price
-        total_price += item_total
+        # item_total = item.quantity * item.price
+        total_price += item.price
+        # fetch product here
+        product  = Product.query.filter_by(product_name=item.product_name).first()
         cart_list.append({
             'id': item.id,
             'product_name': item.product_name,
-            'price': item.price,
+            'price': product.price,
             'quantity': item.quantity,
-            'total': item_total
+            'total': item.price,
+            'user_id': user_id
         })
 
     return render_template('cart.html', cart_items=cart_list, total_price=total_price)
@@ -326,10 +348,107 @@ def remove_cart_item(cart_id):
 
 
 
+@app.route('/update_cart', methods=['POST'])
+def update_cart():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'You must be logged in to update items in the cart.'})
+        
+        user_id = session['user_id']
+        data = request.get_json()
+
+
+        new_quantity = data.get('quantity')
+        product_name = data.get('product_name')
+        user_id = data.get('user_id')
+        price = data.get('price')
+
+        if new_quantity is None or not user_id:
+            return jsonify({'success': False, 'message': 'Invalid request data.'})
+
+        cart_item = Cart.query.filter_by(user_id=int(user_id), product_name=product_name).first()
+        print(cart_item)
+
+        if cart_item:
+            cart_item.quantity = int(new_quantity)
+            cart_item.price = 0
+            cart_item.price = float(price) * int(new_quantity)
+
+            db.session.add(cart_item)
+            db.session.commit()
+
+
+            total_price = Cart.query.filter_by(user_id=int(user_id)).all()
+            final_price = 0
+            for price in total_price:
+                final_price += price.price
+            return jsonify({'success': True, 'qty':cart_item.quantity, 'total_price': cart_item.price, 'final_price': final_price})
+        else:
+            return jsonify({'success': False, 'message': 'Item not found in cart.'})
+
+    except:
+        traceback.print_exc()
+
+
+
 @app.route('/checkout')
 def checkout():
     return render_template('checkout.html')
 
+
+@app.route('/place_order', methods=['POST'])
+def place_order():
+    form = BillingForm()
+    if form.validate_on_submit():
+        # Process form data
+        full_name = form.full_name.data
+        phone = form.phone.data
+        address = form.address.data
+        country = form.country.data
+        city = form.city.data
+        postal_code = form.postal_code.data
+        
+        # Save billing info
+        billing = Billing(
+            user_id=session.get('user_id'),
+            full_name=full_name,
+            phone=phone,
+            address=address,
+            country=country,
+            city=city,
+            postal_code=postal_code
+        )
+        db.session.add(billing)
+        db.session.commit()
+
+        # generate a 6 digit order id
+        order_id = f'{random.randint(100000, 999999)}'
+
+        # Save order info
+        cart_items = Cart.query.filter_by(user_id=session.get('user_id')).all()
+        for item in cart_items:
+            order = Order(
+                user_id=session.get('user_id'),
+                billing_id=billing.id,
+                product_name=item.product_name,
+                quantity=item.quantity,
+                total_price=item.price
+            )
+            db.session.add(order)
+        
+        # Clear the cart
+        Cart.query.filter_by(user_id=session.get('user_id')).delete()
+        db.session.commit()
+
+        return jsonify({
+            'full_name': full_name,
+            'order_id': '123456',  # Example order ID
+            'order_message': 'Your order has been dispatched. We are delivering your order.',
+            'address': address,
+            'payment_method': 'Cash on Delivery'
+        })
+
+    return jsonify({'error': 'Invalid form submission'})
 
 
 
