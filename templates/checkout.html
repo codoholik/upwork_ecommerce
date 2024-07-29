@@ -32,7 +32,7 @@
 						    <div class="card-header" id="headingOne">
 						      <h5 class="mb-0">
 						        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-						          Billing Address
+						          Billing Address/Shipping Address
 						        </button>
 						      </h5>
 						    </div>
@@ -40,18 +40,20 @@
 						    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
 						      <div class="card-body">
 						        <div class="billing-address-form">
-						        	<form action="index.html">
-						        		<p><input type="text" placeholder="Name"></p>
-						        		<p><input type="email" placeholder="Email"></p>
-						        		<p><input type="text" placeholder="Address"></p>
-						        		<p><input type="tel" placeholder="Phone"></p>
-						        		<p><textarea name="bill" id="bill" cols="30" rows="10" placeholder="Say Something"></textarea></p>
-						        	</form>
+						        	<form id="billingForm" method="POST">
+                                        <p><input type="text" name="full_name" placeholder="Full Name" required></p>
+                                        <p><input type="tel" name="phone" placeholder="Phone" required></p>
+                                        <p><input type="text" name="address" placeholder="Address" required></p>
+                                        <p><input type="text" name="country" placeholder="Country" required></p>
+                                        <p><input type="text" name="city" placeholder="City/Town" required></p>
+                                        <p><input type="text" name="postal_code" placeholder="Postal Code" required></p>
+                                        <input type="hidden" name="total_price" value="{{ total_price }}"> 
+                                    </form>
 						        </div>
 						      </div>
 						    </div>
 						  </div>
-						  <div class="card single-accordion">
+						  <!-- <div class="card single-accordion">
 						    <div class="card-header" id="headingTwo">
 						      <h5 class="mb-0">
 						        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
@@ -66,8 +68,8 @@
 						        </div>
 						      </div>
 						    </div>
-						  </div>
-						  <div class="card single-accordion">
+						  </div> -->
+						  <!-- <div class="card single-accordion">
 						    <div class="card-header" id="headingThree">
 						      <h5 class="mb-0">
 						        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
@@ -82,7 +84,7 @@
 						        </div>
 						      </div>
 						    </div>
-						  </div>
+						  </div> -->
 						</div>
 
 					</div>
@@ -91,46 +93,32 @@
 				<div class="col-lg-4">
 					<div class="order-details-wrap">
 						<table class="order-details">
-							<thead>
-								<tr>
-									<th>Your order Details</th>
-									<th>Price</th>
-								</tr>
-							</thead>
+							<tr>
+								<th colspan="2" style="text-align: center;">
+								  <h5>YOUR ORDER DETAILS :</h5>
+								</th>
+							</tr>
 							<tbody class="order-details-body">
 								<tr>
-									<td>Product</td>
-									<td>Total</td>
+									<td><b>PRODUCT</b></td>
+									<td><b>TOTAL PRICE</b></td>
 								</tr>
 								<tr>
 									<td>Strawberry</td>
 									<td>$85.00</td>
 								</tr>
-								<tr>
-									<td>Berry</td>
-									<td>$70.00</td>
-								</tr>
-								<tr>
-									<td>Lemon</td>
-									<td>$35.00</td>
-								</tr>
 							</tbody>
 							<tbody class="checkout-details">
 								<tr>
-									<td>Subtotal</td>
-									<td>$190</td>
-								</tr>
-								<tr>
-									<td>Shipping</td>
-									<td>$50</td>
-								</tr>
-								<tr>
-									<td>Total</td>
+									<td><b>TOTAL</b></td>
 									<td>$240</td>
 								</tr>
 							</tbody>
 						</table>
-						<a href="#" class="boxed-btn">Place Order</a>
+						<form action="{{ url_for('place_order') }}">
+							<button class="boxed-btn" id="placeOrderBtn">Place Order</button>
+							<!-- <a href="#" class="boxed-btn" data-toggle="modal" data-target="#orderModal">Place Order</a> -->
+						</form>
 					</div>
 				</div>
 			</div>
@@ -138,4 +126,80 @@
 	</div>
 	<!-- end check out section -->
 
+	<!-- Modal for order status-->
+<div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="orderModalLabel">Order Confirmation</h5>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		  </button>
+		</div>
+		<div class="modal-body" id="orderModalBody">
+            <!-- Order confirmation content will be dynamically inserted here -->
+        </div>
+		<div class="modal-footer">
+		  <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 50px; background-color: #F28123; padding: 10px 20px;">Close</button>
+		</div>
+	  </div>
+	</div>
+  </div>
+
 {% endblock %}
+
+
+
+{% block js %}
+
+<script>
+	document.getElementById('placeOrderBtn').addEventListener('click', function() {
+    // Serialize form data
+    var form = document.getElementById('billingForm');
+    var formData = new FormData(form);
+    
+    fetch('{{ url_for("place_order") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the modal body with the response data
+        var modalBody = document.getElementById('orderModalBody');
+        modalBody.innerHTML = `
+            <div class="container mt-5 d-flex justify-content-center">
+                <div class="card p-4 mt-3">
+                    <div class="first d-flex justify-content-between align-items-center mb-3">
+                        <div class="info">
+                            <span class="d-block name">Thank you, ${data.full_name}</span>
+                            <span class="order">Order - ${data.order_id}</span>
+                        </div>
+                        <img src="https://i.imgur.com/NiAVkEw.png" width="40"/>
+                    </div>
+                    <div class="detail">
+                        <span class="d-block summery">${data.order_message}</span>
+                    </div>
+                    <hr>
+                    <div class="text">
+                        <span class="d-block new mb-1">${data.full_name}</span>
+                    </div>
+                    <span class="d-block address mb-3">${data.address}</span>
+                    <div class="money d-flex flex-row mt-2 align-items-center">
+                        <img src="https://i.imgur.com/ppwgjMU.png" width="20" />
+                        <span class="ml-2">${data.payment_method}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Show the modal
+        $('#orderModal').modal('show');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+</script>
+
+{% endblock %}
+

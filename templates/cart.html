@@ -49,9 +49,10 @@
                                     <td class="product-name">{{ item.product_name }}</td>
                                     <td class="product-price">${{ item.price }}</td>
                                     <td class="product-quantity">
-                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
+                                        <input data-productprice="{{item.price}}" data-productname="{{item.product_name}}" data-userid="{{item.user_id}}" onchange="update_qty('product_{{item.id}}')" type="number" name="cart_item" id="product_{{item.id}}" class="quantity-input" value="{{ item.quantity }}" min="1" step="1">
+                                        <input type="hidden" name="cart_item" value="{{ item.id }}:{{ item.quantity }}">
                                     </td>
-                                    <td class="product-total">${{ item.total }}</td>
+                                    <td id="total_price_product_{{item.id}}" class="product-total">${{ item.quantity * item.price }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -71,27 +72,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="total-data">
+                            <!-- <tr class="total-data">
                                 <td><strong>Subtotal: </strong></td>
-                                <td>$500</td>
+                                <td>${{ total_price }}</td>
                             </tr>
                             <tr class="total-data">
                                 <td><strong>Shipping: </strong></td>
-                                <td>$45</td>
-                            </tr>
+                                <td>$5</td>
+                            </tr> -->
                             <tr class="total-data">
                                 <td><strong>Total: </strong></td>
-                                <td>$545</td>
+                                <td id="final-price">${{ total_price }}</td>
                             </tr>
                         </tbody>
                     </table>
                     <div class="cart-buttons">
-                        <a href="cart.html" class="boxed-btn">Update Cart</a>
-                        <a href="checkout.html" class="boxed-btn black">Check Out</a>
+                        <a href="checkout" class="boxed-btn black">Check Out</a>
                     </div>
                 </div>
 
-                <div class="coupon-section">
+                <!-- <div class="coupon-section">
                     <h3>Apply Coupon</h3>
                     <div class="coupon-form-wrap">
                         <form action="index.html">
@@ -99,7 +99,7 @@
                             <p><input type="submit" value="Apply"></p>
                         </form>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
@@ -107,4 +107,54 @@
 <!-- end cart -->
 
 
+
 {% endblock %}
+
+{%block js%}
+<script>
+    function update_qty(product_id){
+        const cart_item = document.getElementById(product_id)
+        const product_name = cart_item.getAttribute('data-productname');
+        const user_id = cart_item.getAttribute('data-userid');
+        const qty = cart_item.value
+        const price = cart_item.getAttribute('data-productprice');
+        const final_price = document.getElementById('final-price')
+
+
+        // Prepare data to send to the server
+        const data = {
+            quantity: qty,
+            product_name: product_name,
+            user_id: user_id,
+            price: price
+        };
+
+        // Send an AJAX request to update the cart
+        fetch('/update_cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Handle the response from the server
+            if (data.success) {
+                const total_price = document.getElementById(`total_price_${product_id}`)
+                total_price.innerText = data.total_price;
+                cart_item.value = data.qty;
+                final_price.innerText = data.final_price;
+                // Optionally update the total price on the page
+                // Example: document.getElementById('total_price').innerText = data.new_total_price;
+            } else {
+                alert('Failed to update cart: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the cart');
+        });
+    }
+</script>
+{%endblock%}

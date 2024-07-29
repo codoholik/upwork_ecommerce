@@ -65,8 +65,8 @@
 								<li><a href="shop">Shop</a>
 									<ul class="sub-menu">
 										<li><a href="single_product">Single Product</a></li>
-										<li><a href="checkout">Check Out</a></li>
 										<li><a href="cart">Cart</a></li>
+										<li><a href="checkout">Check Out</a></li>
 									</ul>
 								</li>
                                 <li>
@@ -74,6 +74,8 @@
                                         <a class="home-icon" href="/"><i class="fas fa-home"></i></a>
                                         <a class="shopping-cart" href="cart"><i class="fas fa-shopping-cart"></i></a>
                                         <a class="login-icon" href="login"><i class="fas fa-user"></i></a>
+                                        <a class="logout-icon" href="logout"><i class="fas fa-sign-out-alt"></i></a>
+                                        <i class="fa-solid fa-right-from-bracket"></i>
                                         <a class="mobile-hide search-bar-icon" href="#"><i class="fas fa-search"></i></a>
                                     </div>
                                 </li>
@@ -232,6 +234,9 @@
 	<script src="static/js/sticker.js"></script>
 	<!-- main js -->
 	<script src="static/js/main.js"></script>
+
+    {%block js%}
+    {%endblock%}
 
 </body>
 </html>
