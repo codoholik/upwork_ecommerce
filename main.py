@@ -1,3 +1,4 @@
+import datetime
 from pprint import pprint
 import random
 from flask import session
@@ -87,6 +88,7 @@ class Order(db.Model):
     __tablename__ = 'order'
 
     id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.String(20), nullable=False, unique=True) 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     billing_id = db.Column(db.Integer, db.ForeignKey('billing.id'))
     product_name = db.Column(db.String(200), nullable=False)
@@ -391,64 +393,89 @@ def update_cart():
 
 
 
-@app.route('/checkout')
-def checkout():
-    return render_template('checkout.html')
+# @app.route('/checkout')
+# def checkout():
+#     return render_template('checkout.html')
 
 
 @app.route('/place_order', methods=['POST'])
 def place_order():
-    form = BillingForm()
-    if form.validate_on_submit():
-        # Process form data
-        full_name = form.full_name.data
-        phone = form.phone.data
-        address = form.address.data
-        country = form.country.data
-        city = form.city.data
-        postal_code = form.postal_code.data
-        
-        # Save billing info
-        billing = Billing(
+    if 'user_id' not in session:
+        return jsonify({'error': 'User not logged in'})
+
+    form = request.form
+
+    full_name = form.get('full_name')
+    phone = form.get('phone')
+    address = form.get('address')
+    country = form.get('country')
+    city = form.get('city')
+    postal_code = form.get('postal_code')
+    total_price = form.get('total_price')
+
+    # Save billing info
+    billing = Billing(
+        user_id=session.get('user_id'),
+        full_name=full_name,
+        phone=phone,
+        address=address,
+        country=country,
+        city=city,
+        postal_code=postal_code
+    )
+    db.session.add(billing)
+    db.session.commit()
+
+    # Generate a unique 6-digit order ID
+    def generate_order_id():
+        while True:
+            order_id = f'{random.randint(100000, 999999)}'
+            if not Order.query.filter_by(order_id=order_id).first():
+                return order_id
+
+    order_id = generate_order_id()
+    print("order_id", order_id)
+
+    # Save order info
+    cart_items = Cart.query.filter_by(user_id=session.get('user_id')).all()
+    for item in cart_items:
+        order = Order(
             user_id=session.get('user_id'),
-            full_name=full_name,
-            phone=phone,
-            address=address,
-            country=country,
-            city=city,
-            postal_code=postal_code
+            order_id=order_id,
+            billing_id=billing.id,
+            product_name=item.product_name,
+            quantity=item.quantity,
+            price=item.price,
+            order_date=datetime.datetime.now()
         )
-        db.session.add(billing)
-        db.session.commit()
+        db.session.add(order)
 
-        # generate a 6 digit order id
-        order_id = f'{random.randint(100000, 999999)}'
+    # Clear the cart
+    Cart.query.filter_by(user_id=session.get('user_id')).delete()
+    db.session.commit()
 
-        # Save order info
-        cart_items = Cart.query.filter_by(user_id=session.get('user_id')).all()
-        for item in cart_items:
-            order = Order(
-                user_id=session.get('user_id'),
-                billing_id=billing.id,
-                product_name=item.product_name,
-                quantity=item.quantity,
-                total_price=item.price
-            )
-            db.session.add(order)
-        
-        # Clear the cart
-        Cart.query.filter_by(user_id=session.get('user_id')).delete()
-        db.session.commit()
+    return jsonify({
+        'full_name': full_name,
+        'order_id': order_id,
+        'order_message': 'Your order has been dispatched. We are delivering your order.',
+        'address': address,
+        'payment_method': 'Cash on Delivery'
+    })
 
-        return jsonify({
-            'full_name': full_name,
-            'order_id': '123456',  # Example order ID
-            'order_message': 'Your order has been dispatched. We are delivering your order.',
-            'address': address,
-            'payment_method': 'Cash on Delivery'
-        })
 
-    return jsonify({'error': 'Invalid form submission'})
+
+@app.route('/checkout')
+def checkout():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_id = session.get('user_id')
+    cart_items = Cart.query.filter_by(user_id=user_id).all()
+
+    # Calculate total price
+    total_price = sum(item.price * item.quantity for item in cart_items)
+
+    return render_template('checkout.html', cart_items=cart_items, total_price=total_price)
 
 
 
@@ -508,4 +535,5 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     # app.run(debug=True)
-    app.run(host="0.0.0.0", port=8000, debug=True)
+
+    app.run(host="0.0.0.0", port=2000, debug=True)

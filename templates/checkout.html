@@ -48,6 +48,7 @@
                                         <p><input type="text" name="city" placeholder="City/Town" required></p>
                                         <p><input type="text" name="postal_code" placeholder="Postal Code" required></p>
                                         <input type="hidden" name="total_price" value="{{ total_price }}"> 
+										<a href="#" class="boxed-btn" id="placeOrderBtn" data-toggle="modal" data-target="#orderModal">Place Order</a>
                                     </form>
 						        </div>
 						      </div>
@@ -103,22 +104,21 @@
 									<td><b>PRODUCT</b></td>
 									<td><b>TOTAL PRICE</b></td>
 								</tr>
+								{% for item in cart_items %}
 								<tr>
-									<td>Strawberry</td>
-									<td>$85.00</td>
+									<td>{{ item.product_name }}</td>
+									<td>${{ '{:.2f}'.format(item.price * item.quantity) }}</td>
 								</tr>
+								{% endfor %}
 							</tbody>
 							<tbody class="checkout-details">
 								<tr>
 									<td><b>TOTAL</b></td>
-									<td>$240</td>
+									<td>${{ '{:.2f}'.format(total_price) }}</td>
 								</tr>
 							</tbody>
 						</table>
-						<form action="{{ url_for('place_order') }}">
-							<button class="boxed-btn" id="placeOrderBtn">Place Order</button>
-							<!-- <a href="#" class="boxed-btn" data-toggle="modal" data-target="#orderModal">Place Order</a> -->
-						</form>
+						<!-- <a href="#" class="boxed-btn" id="placeOrderLink" data-toggle="modal" data-target="#orderModal">Place Order</a> -->
 					</div>
 				</div>
 			</div>
@@ -153,52 +153,74 @@
 {% block js %}
 
 <script>
-	document.getElementById('placeOrderBtn').addEventListener('click', function() {
-    // Serialize form data
-    var form = document.getElementById('billingForm');
-    var formData = new FormData(form);
+	document.getElementById('placeOrderBtn').addEventListener('click', function(event) {
+		event.preventDefault();
+		// Serialize form data
+		var form = document.getElementById('billingForm');
+		var formData = new FormData(form);
     
-    fetch('{{ url_for("place_order") }}', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Update the modal body with the response data
-        var modalBody = document.getElementById('orderModalBody');
-        modalBody.innerHTML = `
-            <div class="container mt-5 d-flex justify-content-center">
-                <div class="card p-4 mt-3">
-                    <div class="first d-flex justify-content-between align-items-center mb-3">
-                        <div class="info">
-                            <span class="d-block name">Thank you, ${data.full_name}</span>
-                            <span class="order">Order - ${data.order_id}</span>
-                        </div>
-                        <img src="https://i.imgur.com/NiAVkEw.png" width="40"/>
-                    </div>
-                    <div class="detail">
-                        <span class="d-block summery">${data.order_message}</span>
-                    </div>
-                    <hr>
-                    <div class="text">
-                        <span class="d-block new mb-1">${data.full_name}</span>
-                    </div>
-                    <span class="d-block address mb-3">${data.address}</span>
-                    <div class="money d-flex flex-row mt-2 align-items-center">
-                        <img src="https://i.imgur.com/ppwgjMU.png" width="20" />
-                        <span class="ml-2">${data.payment_method}</span>
-                    </div>
-                </div>
-            </div>
+		fetch('{{ url_for("place_order") }}', {
+			method: 'POST',
+			body: formData
+		})
+		.then(response => response.json())
+		.then(data => {
+			// Update the modal body with the response data
+			var modalBody = document.getElementById('orderModalBody');
+			modalBody.innerHTML = `
+				<div class="container mt-5 d-flex justify-content-center">
+					<div class="card p-4 mt-3">
+						<div class="first d-flex justify-content-between align-items-center mb-3">
+							<div class="info">
+								<span class="d-block name">Thank you, ${data.full_name}</span>
+								<span class="order">Order - ${data.order_id}</span>
+							</div>
+							<img src="https://i.imgur.com/NiAVkEw.png" width="40"/>
+						</div>
+						<div class="detail">
+							<span class="d-block summery">${data.order_message}</span>
+						</div>
+						<hr>
+						<div class="text">
+							<span class="d-block new mb-1">${data.full_name}</span>
+						</div>
+						<span class="d-block address mb-3">${data.address}</span>
+						<div class="money d-flex flex-row mt-2 align-items-center">
+							<img src="https://i.imgur.com/ppwgjMU.png" width="20" />
+							<span class="ml-2">${data.payment_method}</span>
+						</div>
+					</div>
+				</div>
+			`;
+
+			// Show the modal
+			$('#orderModal').modal('show');
+
+		})
+		.catch(error => {
+			console.error('Error:', error);
+		});
+	});
+
+	// Clear the order details when the modal is closed
+    $('#orderModal').on('hidden.bs.modal', function () {
+        // Clear the order details table
+        document.querySelector('.order-details-body').innerHTML = `
+            <tr>
+                <td><b>PRODUCT</b></td>
+                <td><b>TOTAL PRICE</b></td>
+            </tr>
+        `;
+        document.querySelector('.checkout-details').innerHTML = `
+            <tr>
+                <td><b>TOTAL</b></td>
+                <td>$0.00</td>
+            </tr>
         `;
 
-        // Show the modal
-        $('#orderModal').modal('show');
-    })
-    .catch(error => {
-        console.error('Error:', error);
+        // Update the hidden total price field
+        document.getElementById('hiddenTotalPrice').value = '0.00';
     });
-});
 </script>
 
 {% endblock %}
