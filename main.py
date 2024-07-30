@@ -369,7 +369,6 @@ def update_cart():
             return jsonify({'success': False, 'message': 'Invalid request data.'})
 
         cart_item = Cart.query.filter_by(user_id=int(user_id), product_name=product_name).first()
-        print(cart_item)
 
         if cart_item:
             cart_item.quantity = int(new_quantity)
@@ -403,6 +402,7 @@ def place_order():
     if 'user_id' not in session:
         return jsonify({'error': 'User not logged in'})
 
+    user_id = session.get('user_id')
     form = request.form
 
     full_name = form.get('full_name')
@@ -413,18 +413,36 @@ def place_order():
     postal_code = form.get('postal_code')
     total_price = form.get('total_price')
 
-    # Save billing info
-    billing = Billing(
-        user_id=session.get('user_id'),
+    # if billing info already exist:
+    exist_bill =  Billing.query.filter_by(
+        user_id=user_id,
         full_name=full_name,
         phone=phone,
         address=address,
         country=country,
         city=city,
         postal_code=postal_code
-    )
-    db.session.add(billing)
-    db.session.commit()
+    ).first()
+
+    if exist_bill:
+        billing = exist_bill
+    else:
+        # Save billing info
+        billing = Billing(
+            user_id=user_id,
+            full_name=full_name,
+            phone=phone,
+            address=address,
+            country=country,
+            city=city,
+            postal_code=postal_code
+        )
+        db.session.add(billing)
+        db.session.commit()
+
+    # store billing ID in session
+    session['billing_id'] = billing.id
+
 
     # Generate a unique 6-digit order ID
     def generate_order_id():
@@ -434,13 +452,12 @@ def place_order():
                 return order_id
 
     order_id = generate_order_id()
-    print("order_id", order_id)
 
     # Save order info
-    cart_items = Cart.query.filter_by(user_id=session.get('user_id')).all()
+    cart_items = Cart.query.filter_by(user_id=user_id).all()
     for item in cart_items:
         order = Order(
-            user_id=session.get('user_id'),
+            user_id=user_id,
             order_id=order_id,
             billing_id=billing.id,
             product_name=item.product_name,
@@ -451,7 +468,7 @@ def place_order():
         db.session.add(order)
 
     # Clear the cart
-    Cart.query.filter_by(user_id=session.get('user_id')).delete()
+    Cart.query.filter_by(user_id=user_id).delete()
     db.session.commit()
 
     return jsonify({
@@ -467,15 +484,20 @@ def place_order():
 @app.route('/checkout')
 def checkout():
     if 'user_id' not in session:
-        return redirect(url_for('login'))  # Redirect to login if not logged in
+        return redirect(url_for('login'))  
 
     user_id = session.get('user_id')
     cart_items = Cart.query.filter_by(user_id=user_id).all()
 
     # Calculate total price
     total_price = sum(item.price * item.quantity for item in cart_items)
+    print("total_price", total_price)
 
-    return render_template('checkout.html', cart_items=cart_items, total_price=total_price)
+    # fetch existing billing info
+    billing_items = Billing.query.filter_by(user_id=user_id).all()
+
+
+    return render_template('checkout.html', cart_items=cart_items, total_price=total_price, billing_items=billing_items)
 
 
 
@@ -536,4 +558,4 @@ if __name__ == '__main__':
         db.create_all()
     # app.run(debug=True)
 
-    app.run(host="0.0.0.0", port=2000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
