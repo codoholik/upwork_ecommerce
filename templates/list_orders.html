@@ -19,6 +19,7 @@
                         <th>Full Name</th>
                         <th>Order ID</th>
                         <th>Order Date</th>
+                        <th>Total Quantity</th>
                         <th>Total Amount</th>
                         <th>Status</th>
                         <th>Action</th>
@@ -29,16 +30,17 @@
                     <tr>
                         <td>{{ item.username }}</td>
                         <td>{{ item.order_id }}</td>
-                        <td>{{ item.order_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>${{ '{:.2f}'.format(item.total_amount) }}</td>
-                        <td>{{ item.user_id }}</td>
+                        <td>{{ item.order_date }}</td>
+                        <td>{{ item.total_quantity }}</td>
+                        <td>${{ item.total_amount }}</td>
+                        <td>{{ item.status }}</td>
                         <td>
                             <div class="dropdown mb-4">
                                 <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton{{ item.order_id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Dropdown
                                 </button>
                                 <div class="dropdown-menu animated--fade-in" aria-labelledby="dropdownMenuButton{{ item.order_id }}">
-                                    <a class="dropdown-item" href="#" onclick="showOrderDetailsModal({{ item.order_id }})">Detail</a>
+                                    <a class="dropdown-item" href="#" onclick="showOrderDetailsModal({{ item.order_id }})">View Details</a>
                                 </div>
                             </div>
                         </td>
@@ -55,15 +57,16 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+                <!-- <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5> -->
+                <h5> Order ID: <span class="modal-title" id="orderId"></span> </h5>
                 <button type="button" class="close" aria-label="Close" onclick="closeModal()">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <p><strong>Order ID:</strong> <span id="orderId"></span></p>
+                <!-- <p><strong>Order ID:</strong> <span id="orderId"></span></p> -->
                 <p><strong>Order Date:</strong> <span id="orderDate"></span></p>
-                <p><strong>Full Name:</strong> <span id="fullName"></span></p>
+                <!-- <p><strong>Full Name:</strong> <span id="fullName"></span></p> -->
                 <table class="table">
                     <thead>
                         <tr>

@@ -117,7 +117,7 @@
 								{% for item in cart_items %}
 								<tr>
 									<td>{{ item.product_name }}</td>
-									<td>${{ '{:.2f}'.format(item.price * item.quantity) }}</td>
+									<td>${{ '{:.2f}'.format(item.price) }}</td>
 								</tr>
 								{% endfor %}
 							</tbody>

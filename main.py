@@ -104,17 +104,23 @@ class Billing(db.Model):
     postal_code = db.Column(db.String(20), nullable=False)
 
 
+from enum import Enum
+class OrderStatus(Enum):
+    PROCESSING = 'Processing'
+    COMPLETE = 'Complete'
+    CANCEL = 'Cancel'
 class Order(db.Model):
     __tablename__ = 'order'
 
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.String(20), nullable=False, unique=True) 
+    order_id = db.Column(db.String(20), nullable=False) 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    billing_id = db.Column(db.Integer, db.ForeignKey('billing.id'))
+    billing_id = db.Column(db.Integer, nullable=False)
     product_name = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False)
     order_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+    status = db.Column(db.Enum(OrderStatus), nullable=False, default=OrderStatus.PROCESSING)
 
 
 # # Category model
@@ -466,13 +472,11 @@ def place_order():
 
     # Generate a unique 6-digit order ID
     def generate_order_id():
-        while True:
-            order_id = f'{random.randint(100000, 999999)}'
-            if not Order.query.filter_by(order_id=order_id).first():
-                return order_id
+        order_id = f'{random.randint(100000, 999999)}'
+        if not Order.query.filter_by(order_id=order_id).first():
+            return order_id
 
     order_id = generate_order_id()
-    print(order_id)
 
     # Save order info
     cart_items = Cart.query.filter_by(user_id=user_id).all()
@@ -511,8 +515,12 @@ def checkout():
     cart_items = Cart.query.filter_by(user_id=user_id).all()
 
     # Calculate total price
-    total_price = sum(item.price * item.quantity for item in cart_items)
+    total_price = sum(item.price for item in cart_items)
+    # final_price = 0
+    # for price in total_price:
+    #     final_price += price.price
     print("total_price", total_price)
+    print("cart_items", cart_items)
 
     # fetch existing billing info
     billing_items = Billing.query.filter_by(user_id=user_id).all()
@@ -580,24 +588,74 @@ def admin():
     return render_template('admin_dashboard.html', username=session.get('username'))
 
 
+from sqlalchemy import func
 
 @app.route('/list_orders')
 def list_orders():
-    # Query to get orders, joining with billing to get full name
-    orders = db.session.query(Order, Billing.full_name).join(Billing, Order.billing_id == Billing.id).order_by(Order.order_date, Order.user_id).all()
+    # Define the query to perform the grouping and aggregation including order_date
+    order_summary = (
+        db.session.query(
+            Order.billing_id,
+            Order.order_id,
+            Order.order_date,
+            func.sum(Order.quantity).label('total_quantity'),
+            func.sum(Order.price).label('total_amount')
+        )
+        .group_by(Order.order_id)
+        .order_by(Order.order_date.desc())
+        .all()
+    )
 
+    # Prepare data for rendering
     order_data = []
-    for order, full_name in orders:
-        total_amount = db.session.query(db.func.sum(Order.price * Order.quantity)).filter_by(order_id=order.order_id).scalar()
+    for billing_id, order_id, order_date, total_quantity, total_amount in order_summary:
+        # billing info
+        billing = Billing.query.filter_by(id=billing_id).first()
+        # fullname fetch from billing
+        full_name = billing.full_name if billing else 'Unknown'
+
         order_data.append({
             'username': full_name,
-            'order_id': order.order_id,
-            'order_date': order.order_date,
-            'total_amount': total_amount,
-            'user_id': order.user_id
+            'order_id': order_id,
+            'order_date': order_date.strftime('%Y-%m-%d'), 
+            'total_quantity': total_quantity,
+            'total_amount': total_amount
         })
 
     return render_template('list_orders.html', order_items=order_data)
+
+
+# @app.route('/list_orders')
+# def list_orders():
+#     sql_query = 'select * from order where '
+#     # Query to get orders, joining with billing to get full name
+#     orders = db.session.query(Order, Billing.full_name).join(Billing, Order.billing_id == Billing.id).order_by(Order.order_date, Order.user_id).all()
+
+#     order_data = []
+#     for order, full_name in orders:
+#         total_amount = db.session.query(db.func.sum(Order.price * Order.quantity)).filter_by(order_id=order.order_id).scalar()
+#         order_data.append({
+#             'username': full_name,
+#             'order_id': order.order_id,
+#             'order_date': order.order_date,
+#             'total_amount': total_amount,
+#             'user_id': order.user_id
+#         })
+
+#     return render_template('list_orders.html', order_items=order_data)
+
+
+@app.route('/update_order_status/<int:order_id>', methods=['POST'])
+def update_order_status(order_id):
+    new_status = request.form.get('status')
+    order = Order.query.filter_by(order_id=order_id).first()
+    
+    if order:
+        order.status = OrderStatus[new_status.upper()]
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    
+    return jsonify({'error': 'Order not found'}), 404
 
 
 
@@ -625,4 +683,4 @@ if __name__ == '__main__':
         db.create_all()
     # app.run(debug=True)
 
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=4000, debug=True)
