@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 import datetime
 from pprint import pprint
 import random
+import tabnanny
 from flask import session
 import traceback
 from flask_sqlalchemy import SQLAlchemy
@@ -12,6 +14,8 @@ from werkzeug.utils import secure_filename
 from wtforms.validators import DataRequired, Length, Regexp
 import os
 from flask_migrate import Migrate
+from flask_mail import Mail, Message
+import os
 
 
 # Create the app
@@ -30,6 +34,22 @@ db = SQLAlchemy(app)
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
 # keeping user sessions
+
+
+
+
+# Configuration for Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'your_email@example.com'
+app.config['MAIL_PASSWORD'] = 'your_email_password'
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_DEFAULT_SENDER'] = 'your_email@example.com'
+
+mail = Mail(app)
+
+
 
 
 # Models
@@ -452,6 +472,7 @@ def place_order():
                 return order_id
 
     order_id = generate_order_id()
+    print(order_id)
 
     # Save order info
     cart_items = Cart.query.filter_by(user_id=user_id).all()
@@ -478,7 +499,7 @@ def place_order():
         'address': address,
         'payment_method': 'Cash on Delivery'
     })
-
+    
 
 
 @app.route('/checkout')
@@ -501,9 +522,9 @@ def checkout():
 
 
 
-@app.route('/single_product')
-def single_product():
-    return render_template('single-product.html')
+# @app.route('/single_product')
+# def single_product():
+#     return render_template('single-product.html')
 
 
 
@@ -518,9 +539,39 @@ def about():
     return render_template("about.html")
 
 
-@app.route('/contact')
+# contact page 
+@app.route('/contact', methods=['POST'])
 def contact():
-    return render_template('contact.html')
+    name = request.form.get('name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    subject = request.form.get('subject')
+    message = request.form.get('message')
+
+    # Create a message object
+    msg = Message(
+        subject=f"Contact Form Submission: {subject}",
+        # admin email address
+        recipients=["sachdevagarima25@gmail.com"],
+        body=f"""
+        Name: {name}
+        Email: {email}
+        Phone: {phone}
+        
+        Message:
+        {message}
+        """
+    )
+
+    try:
+        # Send the email
+        mail.send(msg)
+        return jsonify({'status': 'success', 'message': 'Your message has been sent!'})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': 'There was an error sending your message. Please try again later.'})
+
+
 
 
 
@@ -532,7 +583,23 @@ def admin():
 
 @app.route('/list_orders')
 def list_orders():
-    return render_template('list_orders.html')
+    # Query to get orders, joining with billing to get full name
+    orders = db.session.query(Order, Billing.full_name).join(Billing, Order.billing_id == Billing.id).order_by(Order.order_date, Order.user_id).all()
+
+    order_data = []
+    for order, full_name in orders:
+        total_amount = db.session.query(db.func.sum(Order.price * Order.quantity)).filter_by(order_id=order.order_id).scalar()
+        order_data.append({
+            'username': full_name,
+            'order_id': order.order_id,
+            'order_date': order.order_date,
+            'total_amount': total_amount,
+            'user_id': order.user_id
+        })
+
+    return render_template('list_orders.html', order_items=order_data)
+
+
 
 
 
