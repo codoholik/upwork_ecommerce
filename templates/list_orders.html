@@ -102,16 +102,64 @@
 {% block scripts %}
 <script>
     function showOrderDetailsModal(orderId) {
-        document.getElementById('orderId').innerHTML = orderId;
-        // document.getElementById('orderDate').innerHTML = orderDate;
-        // document.getElementById('fullName').innerHTML = orderId;
-        // show the modal
-        document.getElementById('orderDetailsModal').style.display = 'block';
-}
-function closeModal() {
-    // document.getElementById('orderDetailsModal').hidden = true;
-    document.getElementById('orderDetailsModal').style.display = 'none';
-}
+        fetch(`/order_details/${orderId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('orderId').innerHTML = data.order_id;
+                document.getElementById('orderDate').innerHTML = data.order_date;
+                document.getElementById('totalAmount').innerHTML = data.total_amount;
+
+                // clear existing order items
+                const orderItemsTableBody = document.getElementById('orderItems');
+                orderItemsTableBody.innerHTML = '';
+
+                // populate order items
+                data.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.price.toFixed(2)}</td>
+                    `;
+                    orderItemsTableBody.appendChild(row);
+                });
+
+                // Show the modaL
+                document.getElementById('orderDetailsModal').style.display = 'block';
+            })
+        }
+
+
+    // closing  modal
+    function closeModal() {
+        document.getElementById('orderDetailsModal').style.display = 'none';
+    }
+
+    function saveStatus() {
+        const orderId = document.getElementById('orderId').textContent;
+        const status = document.getElementById('orderStatus').value;
+
+        fetch(`/update_order_status/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'status': status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error updating status: ' + data.error);
+            } else if (data.success) {
+                alert('Status updated successfully!');
+                closeModal();
+                // Optionally refresh the orders list
+                // location.reload();
+            }
+        })
+    }
 </script>
 {% endblock %}
 
