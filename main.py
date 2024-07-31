@@ -252,32 +252,6 @@ def shop():
 
 
 
-@app.route('/add_product', methods=['GET', 'POST'])
-def add_product():
-    if request.method == 'POST':
-        name = request.form['product_name']
-        description = request.form['description']
-        price = request.form['price']
-        quantity = request.form['qty']
-        file = request.files['product_img']
-        if file:
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            image_url = file_path
-        else:
-            image_url = None
-
-        new_product = Product(product_name=name, description=description, price=price, quantity=quantity, image_url=image_url)
-        
-        db.session.add(new_product)
-        db.session.commit()
-        return redirect(url_for('add_product'))
-    
-    return render_template('add_product.html')
-
-
-
 @app.route('/add_cart/<int:product_id>', methods=['POST'])
 def add_cart(product_id):
     if 'user_id' in session:
@@ -572,14 +546,42 @@ def contact():
 
 
 
+# admin panel
 
 @app.route('/admin')
 def admin():
     return render_template('admin_dashboard.html', username=session.get('username'))
 
 
-from sqlalchemy import func
+# adding a product through admin
+@app.route('/add_product', methods=['GET', 'POST'])
+def add_product():
+    if request.method == 'POST':
+        name = request.form['product_name']
+        description = request.form['description']
+        price = request.form['price']
+        quantity = request.form['qty']
+        file = request.files['product_img']
+        if file:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            image_url = file_path
+        else:
+            image_url = None
 
+        new_product = Product(product_name=name, description=description, price=price, quantity=quantity, image_url=image_url)
+        
+        db.session.add(new_product)
+        db.session.commit()
+        return redirect(url_for('add_product'))
+    
+    return render_template('add_product.html')
+
+
+
+from sqlalchemy import func
+# render all orders
 @app.route('/list_orders')
 def list_orders():
     # query to perform order_date by grouping order id
@@ -681,4 +683,4 @@ if __name__ == '__main__':
         db.create_all()
     # app.run(debug=True)
 
-    app.run(host="0.0.0.0", port=4000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=True)
