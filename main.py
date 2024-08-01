@@ -1,5 +1,4 @@
 import datetime
-from pprint import pprint
 import random
 from flask import session
 import traceback
@@ -12,6 +11,8 @@ from werkzeug.utils import secure_filename
 from wtforms.validators import DataRequired, Length, Regexp
 import os
 from flask_migrate import Migrate
+from flask_mail import Mail, Message
+import os
 
 
 # Create the app
@@ -30,6 +31,22 @@ db = SQLAlchemy(app)
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
 # keeping user sessions
+
+
+
+
+# Configuration for Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'your_email@example.com'
+app.config['MAIL_PASSWORD'] = 'your_email_password'
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_DEFAULT_SENDER'] = 'your_email@example.com'
+
+mail = Mail(app)
+
+
 
 
 # Models
@@ -84,17 +101,23 @@ class Billing(db.Model):
     postal_code = db.Column(db.String(20), nullable=False)
 
 
+from enum import Enum
+class OrderStatus(Enum):
+    PROCESSING = 'Processing'
+    COMPLETE = 'Complete'
+    CANCEL = 'Cancel'
 class Order(db.Model):
     __tablename__ = 'order'
 
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.String(20), nullable=False, unique=True) 
+    order_id = db.Column(db.String(20), nullable=False) 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    billing_id = db.Column(db.Integer, db.ForeignKey('billing.id'))
+    billing_id = db.Column(db.Integer, nullable=False)
     product_name = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False)
     order_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+    status = db.Column(db.Enum(OrderStatus), nullable=False, default=OrderStatus.PROCESSING)
 
 
 # # Category model
@@ -118,7 +141,6 @@ class RegisterForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4, max=10)])
 
 
-
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
@@ -134,9 +156,8 @@ class BillingForm(FlaskForm):
     postal_code = StringField('Postal Code', validators=[DataRequired(), Regexp(r'^\d{5}(-\d{4})?$', message="Invalid postal code")])
 
 
+
 # Routes and handle form submission
-
-
 # Route to render register page and handle form submission
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -229,33 +250,6 @@ def serve_upload(filename):
 def shop():
     products = Product.query.all()
     return render_template('shop.html', products=products)
-
-
-
-@app.route('/add_product', methods=['GET', 'POST'])
-def add_product():
-    if request.method == 'POST':
-        name = request.form['product_name']
-        description = request.form['description']
-        price = request.form['price']
-        quantity = request.form['qty']
-        file = request.files['product_img']
-        if file:
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            image_url = file_path
-        else:
-            image_url = None
-
-        new_product = Product(product_name=name, description=description, price=price, quantity=quantity, image_url=image_url)
-        
-        db.session.add(new_product)
-        db.session.commit()
-        return redirect(url_for('add_product'))
-    
-    return render_template('add_product.html', username=session.get('username'))
-
 
 
 @app.route('/add_cart/<int:product_id>', methods=['POST'])
@@ -370,7 +364,6 @@ def update_cart():
             return jsonify({'success': False, 'message': 'Invalid request data.'})
 
         cart_item = Cart.query.filter_by(user_id=int(user_id), product_name=product_name).first()
-        print(cart_item)
 
         if cart_item:
             cart_item.quantity = int(new_quantity)
@@ -394,16 +387,12 @@ def update_cart():
 
 
 
-# @app.route('/checkout')
-# def checkout():
-#     return render_template('checkout.html')
-
-
 @app.route('/place_order', methods=['POST'])
 def place_order():
     if 'user_id' not in session:
         return jsonify({'error': 'User not logged in'})
 
+    user_id = session.get('user_id')
     form = request.form
 
     full_name = form.get('full_name')
@@ -414,34 +403,50 @@ def place_order():
     postal_code = form.get('postal_code')
     total_price = form.get('total_price')
 
-    # Save billing info
-    billing = Billing(
-        user_id=session.get('user_id'),
+    # if billing info already exist:
+    exist_bill =  Billing.query.filter_by(
+        user_id=user_id,
         full_name=full_name,
         phone=phone,
         address=address,
         country=country,
         city=city,
         postal_code=postal_code
-    )
-    db.session.add(billing)
-    db.session.commit()
+    ).first()
+
+    if exist_bill:
+        billing = exist_bill
+    else:
+        # Save billing info
+        billing = Billing(
+            user_id=user_id,
+            full_name=full_name,
+            phone=phone,
+            address=address,
+            country=country,
+            city=city,
+            postal_code=postal_code
+        )
+        db.session.add(billing)
+        db.session.commit()
+
+    # store billing ID in session
+    session['billing_id'] = billing.id
+
 
     # Generate a unique 6-digit order ID
     def generate_order_id():
-        while True:
-            order_id = f'{random.randint(100000, 999999)}'
-            if not Order.query.filter_by(order_id=order_id).first():
-                return order_id
+        order_id = f'{random.randint(100000, 999999)}'
+        if not Order.query.filter_by(order_id=order_id).first():
+            return order_id
 
     order_id = generate_order_id()
-    print("order_id", order_id)
 
     # Save order info
-    cart_items = Cart.query.filter_by(user_id=session.get('user_id')).all()
+    cart_items = Cart.query.filter_by(user_id=user_id).all()
     for item in cart_items:
         order = Order(
-            user_id=session.get('user_id'),
+            user_id=user_id,
             order_id=order_id,
             billing_id=billing.id,
             product_name=item.product_name,
@@ -452,7 +457,7 @@ def place_order():
         db.session.add(order)
 
     # Clear the cart
-    Cart.query.filter_by(user_id=session.get('user_id')).delete()
+    Cart.query.filter_by(user_id=user_id).delete()
     db.session.commit()
 
     return jsonify({
@@ -462,27 +467,25 @@ def place_order():
         'address': address,
         'payment_method': 'Cash on Delivery'
     })
-
+    
 
 
 @app.route('/checkout')
 def checkout():
     if 'user_id' not in session:
-        return redirect(url_for('login'))  # Redirect to login if not logged in
+        return redirect(url_for('login'))  
 
     user_id = session.get('user_id')
     cart_items = Cart.query.filter_by(user_id=user_id).all()
 
     # Calculate total price
-    total_price = sum(item.price * item.quantity for item in cart_items)
+    total_price = sum(item.price for item in cart_items)
 
-    return render_template('checkout.html', cart_items=cart_items, total_price=total_price)
+    # fetch existing billing info
+    billing_items = Billing.query.filter_by(user_id=user_id).all()
 
 
-
-@app.route('/single_product')
-def single_product():
-    return render_template('single-product.html')
+    return render_template('checkout.html', cart_items=cart_items, total_price=total_price, billing_items=billing_items)
 
 
 
@@ -497,21 +500,150 @@ def about():
     return render_template("about.html")
 
 
-@app.route('/contact')
+# contact page 
+@app.route('/contact', methods=['POST'])
 def contact():
-    return render_template('contact.html')
+    name = request.form.get('name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    subject = request.form.get('subject')
+    message = request.form.get('message')
+
+    # Create a message object
+    msg = Message(
+        subject=f"Contact Form Submission: {subject}",
+        # admin email address
+        recipients=["sachdevagarima25@gmail.com"],
+        body=f"""
+        Name: {name}
+        Email: {email}
+        Phone: {phone}
+        
+        Message:
+        {message}
+        """
+    )
+
+    try:
+        # Send the email
+        mail.send(msg)
+        return jsonify({'status': 'success', 'message': 'Your message has been sent!'})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': 'There was an error sending your message. Please try again later.'})
 
 
+
+
+# admin panel
 
 @app.route('/admin')
 def admin():
     return render_template('admin_dashboard.html', username=session.get('username'))
 
 
+# adding a product through admin
+@app.route('/add_product', methods=['GET', 'POST'])
+def add_product():
+    if request.method == 'POST':
+        name = request.form['product_name']
+        description = request.form['description']
+        price = request.form['price']
+        quantity = request.form['qty']
+        file = request.files['product_img']
+        if file:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            image_url = file_path
+        else:
+            image_url = None
 
+        new_product = Product(product_name=name, description=description, price=price, quantity=quantity, image_url=image_url)
+        
+        db.session.add(new_product)
+        db.session.commit()
+        return redirect(url_for('add_product'))
+    
+    return render_template('add_product.html')
+
+
+
+from sqlalchemy import func
+# render all orders
 @app.route('/list_orders')
 def list_orders():
-    return render_template('list_orders.html', username=session.get('username'))
+    # query to perform order_date by grouping order id
+    order_summary = (
+        db.session.query(
+            Order.billing_id,
+            Order.order_id,
+            Order.order_date,
+            func.sum(Order.quantity).label('total_quantity'),
+            func.sum(Order.price).label('total_amount'),
+            Order.status
+        )
+        .group_by(Order.order_id)
+        .order_by(Order.order_date.desc())
+        .all()
+    )
+
+    # data  rendering
+    order_data = []
+    for billing_id, order_id, order_date, total_quantity, total_amount, status in order_summary:
+        # billing info
+        billing = Billing.query.filter_by(id=billing_id).first()
+        # fullname fetch from billing
+        full_name = billing.full_name if billing else 'Unknown'
+        # Convert Enum to string
+        status = status.name
+
+        order_data.append({
+            'username': full_name,
+            'order_id': order_id,
+            'order_date': order_date.strftime('%Y-%m-%d'), 
+            'total_quantity': total_quantity,
+            'total_amount': total_amount,
+            'status': status
+        })
+
+    return render_template('list_orders.html', order_items=order_data)
+
+
+# fetch view details of order modal productname, qty, price
+@app.route('/order_details/<int:order_id>')
+def order_details(order_id):
+    order = Order.query.filter_by(order_id=order_id).first()
+    billing = Billing.query.filter_by(id=order.billing_id).first()
+    order_items = Order.query.filter_by(order_id=order_id).all()
+    total_amount = sum(item.price for item in order_items)
+
+    return jsonify({
+        'order_id': order.order_id,
+        'order_date': order.order_date.strftime('%Y-%m-%d'),
+        'full_name': billing.full_name,
+        'items': [
+            {
+                'product_name': item.product_name,
+                'quantity': item.quantity,
+                'price': item.price
+            } for item in order_items
+        ],
+        'total_amount': total_amount
+    })
+
+
+# @app.route('/update_order_status/<int:order_id>', methods=['POST'])
+# def update_order_status(order_id):
+#     new_status = request.form.get('status')
+#     order = Order.query.filter_by(order_id=order_id).first()
+    
+#     if order:
+#         order.status = OrderStatus[new_status.upper()]
+#         db.session.commit()
+#         return jsonify({'success': True})
+    
+#     return jsonify({'error': 'Order not found'})
 
 
 
@@ -564,4 +696,4 @@ if __name__ == '__main__':
         db.create_all()
     # app.run(debug=True)
 
-    app.run(host="0.0.0.0", port=2000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=True)

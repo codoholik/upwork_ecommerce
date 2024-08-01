@@ -40,16 +40,26 @@
 						    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
 						      <div class="card-body">
 						        <div class="billing-address-form">
-						        	<form id="billingForm" method="POST">
-                                        <p><input type="text" name="full_name" placeholder="Full Name" required></p>
-                                        <p><input type="tel" name="phone" placeholder="Phone" required></p>
-                                        <p><input type="text" name="address" placeholder="Address" required></p>
-                                        <p><input type="text" name="country" placeholder="Country" required></p>
-                                        <p><input type="text" name="city" placeholder="City/Town" required></p>
-                                        <p><input type="text" name="postal_code" placeholder="Postal Code" required></p>
-                                        <input type="hidden" name="total_price" value="{{ total_price }}"> 
+									<form id="billingForm" method="POST" action="{{ url_for('place_order') }}">
+										{% if billing_items %}
+											{% set billing = billing_items[0] %}
+											<p><input type="text" name="full_name" placeholder="Full Name" value="{{ billing.full_name }}" required></p>
+											<p><input type="tel" name="phone" placeholder="Phone" value="{{ billing.phone }}" required></p>
+											<p><input type="text" name="address" placeholder="Address" value="{{ billing.address }}" required></p>
+											<p><input type="text" name="country" placeholder="Country" value="{{ billing.country }}" required></p>
+											<p><input type="text" name="city" placeholder="City/Town" value="{{ billing.city }}" required></p>
+											<p><input type="text" name="postal_code" placeholder="Postal Code" value="{{ billing.postal_code }}" required></p>
+										{% else %}
+											<p><input type="text" name="full_name" placeholder="Full Name" required></p>
+											<p><input type="tel" name="phone" placeholder="Phone" required></p>
+											<p><input type="text" name="address" placeholder="Address" required></p>
+											<p><input type="text" name="country" placeholder="Country" required></p>
+											<p><input type="text" name="city" placeholder="City/Town" required></p>
+											<p><input type="text" name="postal_code" placeholder="Postal Code" required></p>
+										{% endif %}
+										<input type="hidden" name="total_price" value="{{ total_price }}"> 
 										<a href="#" class="boxed-btn" id="placeOrderBtn" data-toggle="modal" data-target="#orderModal">Place Order</a>
-                                    </form>
+									</form>
 						        </div>
 						      </div>
 						    </div>
@@ -107,7 +117,7 @@
 								{% for item in cart_items %}
 								<tr>
 									<td>{{ item.product_name }}</td>
-									<td>${{ '{:.2f}'.format(item.price * item.quantity) }}</td>
+									<td>${{ '{:.2f}'.format(item.price) }}</td>
 								</tr>
 								{% endfor %}
 							</tbody>
@@ -221,6 +231,9 @@
         // Update the hidden total price field
         document.getElementById('hiddenTotalPrice').value = '0.00';
     });
+	document.getElementById('orderModalClose').addEventListener('click', function() {
+		document.getElementById('billingForm').reset();
+	});
 </script>
 
 {% endblock %}

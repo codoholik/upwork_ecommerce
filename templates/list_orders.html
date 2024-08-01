@@ -11,80 +11,155 @@
 {% block content %}
 
 <div class="card shadow col-md-12 mb-12">
-    <!-- <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">DataTables Example</h6>
-    </div> -->
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                 <thead>
                     <tr>
-                        <th>S.No</th>
+                        <th>Full Name</th>
                         <th>Order ID</th>
                         <th>Order Date</th>
-                        <th>Amount</th>
+                        <th>Total Quantity</th>
+                        <th>Total Amount</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for item in order_items %}
                     <tr>
-                        <td>Tiger Nixon</td>
-                        <td>System Architect</td>
-                        <td>Edinburgh</td>
-                        <td>61</td>
-                        <td>2011/04/25</td>
+                        <td>{{ item.username }}</td>
+                        <td>{{ item.order_id }}</td>
+                        <td>{{ item.order_date }}</td>
+                        <td>{{ item.total_quantity }}</td>
+                        <td>${{ item.total_amount }}</td>
+                        <td>{{ item.status }}</td>
                         <td>
                             <div class="dropdown mb-4">
-                                <button class="btn btn-primary dropdown-toggle" type="button"
-                                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                                    aria-expanded="false">
+                                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton{{ item.order_id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Dropdown
                                 </button>
-                                <div class="dropdown-menu animated--fade-in"
-                                    aria-labelledby="dropdownMenuButton">
-                                    <a class="dropdown-item" href="#">Action</a>
-                                    <a class="dropdown-item" href="#">Another action</a>
-                                    <a class="dropdown-item" href="#">Something else here</a>
+                                <div class="dropdown-menu animated--fade-in" aria-labelledby="dropdownMenuButton{{ item.order_id }}">
+                                    <a class="dropdown-item" href="#" onclick="showOrderDetailsModal({{ item.order_id }})">View Details</a>
                                 </div>
-                            </div>                            
+                            </div>
                         </td>
                     </tr>
-                    <tr>
-                        <td>Garrett Winters</td>
-                        <td>Accountant</td>
-                        <td>Tokyo</td>
-                        <td>63</td>
-                        <td>2011/07/25</td>
-                        <td>
-                            <div class="dropdown mb-4">
-                                <button class="btn btn-primary dropdown-toggle" type="button"
-                                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
-                                    aria-expanded="false">
-                                    Dropdown
-                                </button>
-                                <div class="dropdown-menu animated--fade-in"
-                                    aria-labelledby="dropdownMenuButton">
-                                    <a class="dropdown-item" href="#">Action</a>
-                                    <a class="dropdown-item" href="#">Another action</a>
-                                    <a class="dropdown-item" href="#">Something else here</a>
-                                </div>
-                            </div>                            
-                        </td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
+<!-- Modal for Details -->
+<div class="modal" id="orderDetailsModal" tabindex="-1" role="dialog" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5> -->
+                <h5> Order ID: <span class="modal-title" id="orderId"></span> </h5>
+                <button type="button" class="close" aria-label="Close" onclick="closeModal()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- <p><strong>Order ID:</strong> <span id="orderId"></span></p> -->
+                <p><strong>Order Date:</strong> <span id="orderDate"></span></p>
+                <!-- <p><strong>Full Name:</strong> <span id="fullName"></span></p> -->
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderItems">
+                        <!-- Order items will be displayed here -->
+                    </tbody>
+                </table>
+                <p><strong>Total Amount:</strong> <span id="totalAmount"></span></p>
+                <div class="form-group">
+                    <label for="orderStatus">Status</label>
+                    <select class="form-control" id="orderStatus">
+                        <option value="processing">Processing</option>
+                        <option value="complete">Complete</option>
+                        <option value="cancel">Cancel</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="closeModal()">Close
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <button type="button" class="btn btn-primary" id="saveStatusBtn" onclick="saveStatus()">Save Status</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
-
 {% block scripts %}
+<script>
+    function showOrderDetailsModal(orderId) {
+        fetch(`/order_details/${orderId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('orderId').innerHTML = data.order_id;
+                document.getElementById('orderDate').innerHTML = data.order_date;
+                document.getElementById('totalAmount').innerHTML = data.total_amount;
 
-<script src="static/vendor/datatables/jquery.dataTables.min.js"></script>
-<script src="static/vendor/datatables/dataTables.bootstrap4.min.js"></script>
-<!-- Page level custom scripts -->
-<script src="static/js/demo/datatables-demo.js"></script>
+                // clear existing order items
+                const orderItemsTableBody = document.getElementById('orderItems');
+                orderItemsTableBody.innerHTML = '';
 
+                // populate order items
+                data.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.price.toFixed(2)}</td>
+                    `;
+                    orderItemsTableBody.appendChild(row);
+                });
+
+                // Show the modaL
+                document.getElementById('orderDetailsModal').style.display = 'block';
+            })
+        }
+
+
+    // closing  modal
+    function closeModal() {
+        document.getElementById('orderDetailsModal').style.display = 'none';
+    }
+
+    function saveStatus() {
+        const orderId = document.getElementById('orderId').textContent;
+        const status = document.getElementById('orderStatus').value;
+
+        fetch(`/update_order_status/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'status': status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error updating status: ' + data.error);
+            } else if (data.success) {
+                alert('Status updated successfully!');
+                closeModal();
+                // Optionally refresh the orders list
+                // location.reload();
+            }
+        })
+    }
+</script>
 {% endblock %}
+

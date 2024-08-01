@@ -159,15 +159,17 @@
        
        <div class="right-column">
            <h2>LOG IN TO ENTER</h2>
-           {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash flash-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+           <div id="flash-message">
+               {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+           </div>
 
             <!-- Login Form -->
            <form method="POST" action="{{ url_for('login') }}">
@@ -186,3 +188,8 @@
    </div>
 </body>
 </html>
+<script>
+    setTimeout(function(){
+        document.getElementById('flash-message').style.display = 'none'
+    }, 2000)
+</script>
