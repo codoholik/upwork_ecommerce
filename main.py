@@ -235,7 +235,12 @@ def login():
 @app.route('/logout')
 def logout():
     # Clear the session to log out the user
+    if 'username' in session:
+        session.pop('username')
+        session.pop('user_id')
+        return redirect(url_for('login'))
     session.pop('user_id', None)
+    session.pop('username')
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
 
@@ -297,6 +302,7 @@ def add_cart(product_id):
 # render added items to cart in cart.html
 @app.route('/cart')
 def cart():
+    print(session)
     if 'user_id' not in session:
         flash('You must be logged in to view the cart.', 'warning')
         return redirect(url_for('login'))
@@ -493,7 +499,7 @@ def checkout():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', username=session.get('username'))
 
 
 
@@ -653,7 +659,7 @@ def list_orders():
             'status': status
         })
 
-    return render_template('list_orders.html', order_items=order_data)
+    return render_template('list_orders.html', order_items=order_data, username=session.get('username'))
 
 
 # fetch view details of order modal productname, qty, price
@@ -679,7 +685,24 @@ def order_details(order_id):
     })
 
 
-# creating a user through admin 
+@app.route('/update_order_status/<int:order_id>', methods=['POST'])
+def update_order_status(order_id):
+    new_status = request.form.get('status')
+    orders = Order.query.filter_by(order_id=order_id).all()
+    if len(orders) > 0:
+
+        for order in orders:
+            order.status = OrderStatus[new_status.upper()]
+            db.session.add(order)
+            db.session.commit()
+        
+        return jsonify({'success': True})
+
+    else:
+        return jsonify({'error': 'Order not found'})
+
+
+
 @app.route('/create_user', methods=['GET', 'POST'])
 def create_user():
     if request.method == 'POST':
