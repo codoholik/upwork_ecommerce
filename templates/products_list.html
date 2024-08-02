@@ -1,11 +1,11 @@
 {% extends 'admin_base.html' %}
 
 {% block title %}
-    List of Users
+    List of Products
 {% endblock %}
 
 {% block pageheading %}
-    All Users
+    All Products
 {% endblock %}
 
 {% block content %}
@@ -16,22 +16,23 @@
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                 <thead>
                     <tr>
-                        <th>S.No</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Type</th>
-                        <th>Action</th>
+                        <th>Product Id</th>
+                        <th>Product Name</th>
+                        <th>Description</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Image URL</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in users %}
+                    {% for product in products %}
                     <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.phone }}</td>
-                        <td>{{ 'Admin' if user.user_type == 2 else 'General' }}</td>
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.product_name }}</td>
+                        <td>{{ product.descrption }}</td>
+                        <td>{{ product.price }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>{{ product.image_url }}</td>
                         <td>
                             <div class="dropdown mb-4">
                                 <button class="btn btn-primary dropdown-toggle" type="button"
@@ -41,7 +42,7 @@
                                 </button>
                                 <div class="dropdown-menu animated--fade-in"
                                     aria-labelledby="dropdownMenuButton">
-                                    <a class="dropdown-item" href="{{ url_for('user_profile', user_id=user.id) }}">Edit User</a>
+                                    <a class="dropdown-item" href="{{ url_for('update_product', product_id=product.id) }}">Edit Product</a>
                                 </div>
                             </div>                            
                         </td>

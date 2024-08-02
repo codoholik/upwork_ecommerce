@@ -1,0 +1,46 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}
+    Edit Product
+{% endblock %}
+
+{% block pageheading %}
+    Edit {{ product.product_name }} 
+{% endblock %}
+
+{% block content %}
+
+    <div class="col-xl-12 col-md-12 mb-4">
+        <form class="row g-3" method="POST" action="{{ url_for('update_product', product_id=product.id) }}" enctype="multipart/form-data">
+            <div class="col-md-6">
+                <label for="product_name" class="form-label">Product Name</label>
+                <input type="text" class="form-control" id="product_name" name="product_name" value="{{product.product_name}}">
+            </div>
+            <div class="col-md-12">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="4">{{ product.description }}</textarea>
+            </div>
+            <div class="col-md-6">
+                <label for="price" class="form-label">Price</label>
+                <input type="number" step="0.01" class="form-control" id="price" name="price" value="{{ product.price }}">
+            </div>
+            <div class="col-md-6">
+                <label for="quantity" class="form-label">Quantity</label>
+                <input type="number" class="form-control" id="quantity" name="quantity" value="{{ product.quantity }}">
+            </div>
+            <div class="col-md-6">
+                <label for="image_url" class="form-label">Image URL</label>
+                <input type="file" class="form-control" id="image_url" name="image_url">
+                {% if product.image_url %}
+                    <input type="hidden" name="existing_image_url" value="{{ product.image_url }}">
+                    <img src="{{ url_for('static', filename=product.image_url) }}" alt="Product Image" width="100">
+                {% endif %}
+            </div>
+            <div class="col-md-12" style="margin-top: 5px;">
+                <button type="submit" class="btn btn-primary">Save Product</button>
+            </div>
+          </form>
+    </div>
+
+{% endblock %}
+

@@ -249,6 +249,8 @@ def serve_upload(filename):
 @app.route('/shop')
 def shop():
     products = Product.query.all()
+    for product in products:
+        print(product.product_name)
     return render_template('shop.html', products=products)
 
 
@@ -534,7 +536,6 @@ def contact():
 
 
 
-
 # admin panel
 
 @app.route('/admin')
@@ -566,6 +567,51 @@ def add_product():
         return redirect(url_for('add_product'))
     
     return render_template('add_product.html')
+
+
+# listing of all the products in admin panel
+@app.route('/products_list')
+def products_list():
+    products = Product.query.all()
+    return render_template('products_list.html', products=products)
+
+
+@app.route('/update_product/<int:product_id>', methods=['GET', 'POST'])
+def update_product(product_id):
+    if request.method == 'POST':
+        # Retrieve data from the form
+        pname = request.form['product_name']
+        description = request.form['description']
+        price = request.form['price']
+        qty = request.form['quantity']
+        file = request.files.get('image_url')
+        if file and file.filename != '':
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            image_url = file_path
+        else:
+            image_url = request.form.get('existing_image_url')
+
+         # Find the product by ID
+        product = Product.query.filter_by(id=product_id).first()
+
+        # update product details in db
+        product.product_name = pname
+        product.description = description
+        product.price = price
+        product.quantity = qty
+        product.image_url = image_url
+
+        # commit changes to db
+        db.session.add(product)
+        db.session.commit()
+
+        # redirect to product list page
+        return redirect(url_for('products_list', product_id=product_id))
+    
+    product = Product.query.filter_by(id=product_id).first()
+    return render_template('update_product.html', product=product)
 
 
 
@@ -633,20 +679,7 @@ def order_details(order_id):
     })
 
 
-# @app.route('/update_order_status/<int:order_id>', methods=['POST'])
-# def update_order_status(order_id):
-#     new_status = request.form.get('status')
-#     order = Order.query.filter_by(order_id=order_id).first()
-    
-#     if order:
-#         order.status = OrderStatus[new_status.upper()]
-#         db.session.commit()
-#         return jsonify({'success': True})
-    
-#     return jsonify({'error': 'Order not found'})
-
-
-
+# creating a user through admin 
 @app.route('/create_user', methods=['GET', 'POST'])
 def create_user():
     if request.method == 'POST':
@@ -664,6 +697,7 @@ def create_user():
     return render_template('create_user.html', username=session.get('username'))
 
 
+# listing if all users in admin
 @app.route('/users_list')
 def users_list():
     users = User.query.all()
@@ -696,4 +730,4 @@ if __name__ == '__main__':
         db.create_all()
     # app.run(debug=True)
 
-    app.run(host="0.0.0.0", port=3000, debug=True)
+    app.run(host="0.0.0.0", port=4000, debug=True)
