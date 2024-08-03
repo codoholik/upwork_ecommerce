@@ -42,6 +42,9 @@
                                 <div class="dropdown-menu animated--fade-in" aria-labelledby="dropdownMenuButton{{ item.order_id }}">
                                     <a class="dropdown-item" href="#" onclick="showOrderDetailsModal({{ item.order_id }})">View Details</a>
                                 </div>
+                                <div class="dropdown-menu animated--fade-in" aria-labelledby="dropdownMenuButton{{ item.order_id }}">
+                                    <a class="dropdown-item" href="#" onclick="showOrderDetailsModal({{ item.order_id }})">Edit Order</a>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -52,7 +55,7 @@
     </div>
 </div>
 
-<!-- Modal for Details -->
+<!-- Modal for View Details -->
 <div class="modal" id="orderDetailsModal" tabindex="-1" role="dialog" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">

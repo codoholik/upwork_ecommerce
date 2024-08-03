@@ -575,13 +575,17 @@ def add_product():
     return render_template('add_product.html')
 
 
-# listing of all the products in admin panel
+
+
+# listing of all the products in admin dashboard
 @app.route('/products_list')
 def products_list():
     products = Product.query.all()
     return render_template('products_list.html', products=products)
 
 
+
+# updating any specific any product in admin dashboard
 @app.route('/update_product/<int:product_id>', methods=['GET', 'POST'])
 def update_product(product_id):
     if request.method == 'POST':
@@ -621,8 +625,28 @@ def update_product(product_id):
 
 
 
+# delete a product through admin dashboard
+@app.route('/delete_product/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    try:
+        print('delete try block')
+        product = session.query(Product).filter_by(id=product_id).first()
+        print(product.id)
+        if product:
+            session.delete(product)
+            session.commit()
+        return redirect(url_for('products_list'))
+    except:
+        traceback.print_exc()
+        # rollback if any error occurs
+        db.session.rollback()
+        return redirect(url_for('products_list'))
+    
+
+
+
 from sqlalchemy import func
-# render all orders
+# render all orders in admin dashboard
 @app.route('/list_orders')
 def list_orders():
     # query to perform order_date by grouping order id
