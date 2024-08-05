@@ -28,7 +28,7 @@
                 <tbody>
                     {% for product in products %}
                     <tr>
-                        <td>{{ product.id }}</td>
+                        <td>{{ loop.index }}</td>
                         <td>{{ product.product_name }}</td>
                         <td>{{ product.descrption }}</td>
                         <td>{{ product.price }}</td>

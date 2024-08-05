@@ -625,11 +625,11 @@ def update_product(product_id):
 
 
 # delete a product through admin dashboard
-@app.route('/delete_product/<int:product_id>', methods=['POST'])
+@app.route('/delete_product/<int:product_id>')
 def delete_product(product_id):
     try:
         print('delete try block')
-        product = session.query(Product).filter_by(id=product_id).first()
+        product = Product.query.filter_by(id=int(product_id)).first()
         print(product.id)
         if product:
             db.session.delete(product)
@@ -637,7 +637,6 @@ def delete_product(product_id):
         return redirect(url_for('products_list'))
     except:
         traceback.print_exc()
-        # rollback if any error occurs
         db.session.rollback()
         return redirect(url_for('products_list'))
     
