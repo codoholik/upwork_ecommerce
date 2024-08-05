@@ -225,9 +225,10 @@
                 data.items.forEach(item => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${item.product_name}</td>
+                        <td><input type="text" class="form-control" name="new_product_name" value="${item.product_name}" data-product-id="${item.product_id}"></td>
                         <td><input type="number" class="form-control" name="price" value="${item.price}" step="0.01" data-product-id="${item.product_id}"></td>
                         <td><input type="number" class="form-control" name="quantity" value="${item.quantity}" data-product-id="${item.product_id}"></td>
+                        <td><input type="text" class="form-control" name="product_name" value="${item.product_name}" data-product-id="${item.product_id}"></td>
                     `;
                     orderItemsTableBody.appendChild(row);
                 });
@@ -243,17 +244,18 @@
 
     function saveOrderChanges() {
         const orderId = document.getElementById('editOrderId').value;
-        // const productName = document.getElementById('editProductName').value;
         const fullName = document.getElementById('editFullName').value;
         const orderDate = document.getElementById('editOrderDate').value;
 
         // Collect updated product details
         const items = [];
         document.querySelectorAll('#editOrderTable tbody tr').forEach(row => {
-            const productName = row.cells[0].innerText;
+            // const productName = row.cells[0].innerText;
+            const productName = row.cells[0].querySelector('input').value;
             const price = parseFloat(row.cells[1].querySelector('input').value);
             const quantity = parseInt(row.cells[2].querySelector('input').value);
-            items.push({ product_name: productName, price: price, quantity: quantity });
+            const old_product_name = row.cells[3].querySelector('input').value;
+            items.push({ product_name: productName, price: price, quantity: quantity, old_product_name: old_product_name });
         });
 
         // Prepare data to send

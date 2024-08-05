@@ -749,12 +749,15 @@ def update_order(order_id):
                 # Update Order Date
                 order.order_date = datetime.datetime.strptime(order_date, '%Y-%m-%d')
                 # Update Product Details
+                print(items)
                 for item in items:
+                    old_product_name = item.get('old_product_name')
                     product_name = item.get('product_name')
                     quantity = item.get('quantity')
                     price = item.get('price')
                     # Update order with the corresponding product details
-                    if order.product_name == product_name:
+                    if order.product_name == old_product_name:
+                        order.product_name = product_name
                         order.quantity = quantity
                         order.price = price
                         db.session.add(order)
