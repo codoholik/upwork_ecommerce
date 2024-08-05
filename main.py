@@ -542,7 +542,7 @@ def contact():
 
 
 
-# admin panel
+# ADMIN PANEL
 
 @app.route('/admin')
 def admin():
@@ -573,7 +573,6 @@ def add_product():
         return redirect(url_for('add_product'))
     
     return render_template('add_product.html')
-
 
 
 
@@ -633,8 +632,8 @@ def delete_product(product_id):
         product = session.query(Product).filter_by(id=product_id).first()
         print(product.id)
         if product:
-            session.delete(product)
-            session.commit()
+            db.session.delete(product)
+            db.session.commit()
         return redirect(url_for('products_list'))
     except:
         traceback.print_exc()
@@ -645,8 +644,8 @@ def delete_product(product_id):
 
 
 
-from sqlalchemy import func
 # render all orders in admin dashboard
+from sqlalchemy import func
 @app.route('/list_orders')
 def list_orders():
     # query to perform order_date by grouping order id
@@ -686,6 +685,7 @@ def list_orders():
     return render_template('list_orders.html', order_items=order_data, username=session.get('username'))
 
 
+
 # fetch view details of order modal productname, qty, price
 @app.route('/order_details/<int:order_id>')
 def order_details(order_id):
@@ -709,6 +709,8 @@ def order_details(order_id):
     })
 
 
+
+# updating order status through admin(processing, complete, cancel)
 @app.route('/update_order_status/<int:order_id>', methods=['POST'])
 def update_order_status(order_id):
     new_status = request.form.get('status')
@@ -726,7 +728,54 @@ def update_order_status(order_id):
         return jsonify({'error': 'Order not found'})
 
 
+# edit/update order through  admin
+@app.route('/update_order/<int:order_id>', methods=['POST'])
+def update_order(order_id):
+    if request.method == 'POST':
+        try:
+            # Retrieve data from JSON request
+            full_name = request.json.get('full_name')
+            order_date = request.json.get('order_date')
+            items = request.json.get('items', [])
 
+            # Find the order by ID
+            order = Order.query.filter_by(id=order_id).first()
+
+            # Update Billing Full Name
+            billing = Billing.query.get(order.billing_id)
+            print(billing)
+            billing.full_name = full_name
+
+            # Update Order Date
+            order.order_date = order_date
+
+            # Update Product Details
+            for item in items:
+                product_name = item.get('product_name')
+                quantity = item.get('quantity')
+                price = item.get('price')
+
+                
+                # Update order with the corresponding product details
+                if order.product_name == product_name:
+                    order.quantity = quantity
+                    order.price = price
+
+            # Commit changes to the database
+            # db.session.add(order)
+            db.session.commit()
+
+            return jsonify({'success': True}), 200
+        except Exception as e:
+            traceback.print_exc()
+            db.session.rollback()  # Rollback changes in case of error
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+
+
+
+
+# creating a user(admin, general) through admin
 @app.route('/create_user', methods=['GET', 'POST'])
 def create_user():
     if request.method == 'POST':
@@ -742,6 +791,7 @@ def create_user():
         return redirect(url_for('create_user'))
 
     return render_template('create_user.html', username=session.get('username'))
+
 
 
 # listing if all users in admin
