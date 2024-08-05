@@ -737,39 +737,36 @@ def update_order(order_id):
             full_name = request.json.get('full_name')
             order_date = request.json.get('order_date')
             items = request.json.get('items', [])
-
+            orderid = request.json.get('order_id')
             # Find the order by ID
-            order = Order.query.filter_by(id=order_id).first()
-
+            orders = Order.query.filter_by(order_id=orderid).all()
             # Update Billing Full Name
-            billing = Billing.query.get(order.billing_id)
-            print(billing)
+            billing = Billing.query.filter_by(id=orders[0].billing_id).first()
             billing.full_name = full_name
-
-            # Update Order Date
-            order.order_date = order_date
-
-            # Update Product Details
-            for item in items:
-                product_name = item.get('product_name')
-                quantity = item.get('quantity')
-                price = item.get('price')
-
-                
-                # Update order with the corresponding product details
-                if order.product_name == product_name:
-                    order.quantity = quantity
-                    order.price = price
-
-            # Commit changes to the database
-            # db.session.add(order)
+            db.session.add(billing)
             db.session.commit()
 
-            return jsonify({'success': True}), 200
-        except Exception as e:
+            for order in orders:
+                # Update Order Date
+                order.order_date = datetime.datetime.strptime(order_date, '%Y-%m-%d')
+                # Update Product Details
+                for item in items:
+                    product_name = item.get('product_name')
+                    quantity = item.get('quantity')
+                    price = item.get('price')
+                    # Update order with the corresponding product details
+                    if order.product_name == product_name:
+                        order.quantity = quantity
+                        order.price = price
+                        db.session.add(order)
+                        db.session.commit()
+                        break
+
+            return jsonify({'success': True})
+        except:
             traceback.print_exc()
-            db.session.rollback()  # Rollback changes in case of error
-            return jsonify({'success': False, 'message': str(e)}), 500
+            db.session.rollback()
+            return jsonify({'success': False})
 
 
 
