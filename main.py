@@ -625,7 +625,7 @@ def update_product(product_id):
 
 
 # delete a product through admin dashboard
-@app.route('/delete_product/<int:product_id>', methods=['POST'])
+@app.route('/delete_product/<int:product_id>')
 def delete_product(product_id):
     try:
         product = Product.query.filter_by(id=int(product_id)).first()
