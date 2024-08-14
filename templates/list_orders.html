@@ -228,7 +228,7 @@
                         <td><input type="text" class="form-control" name="new_product_name" value="${item.product_name}" data-product-id="${item.product_id}"></td>
                         <td><input type="number" class="form-control" name="price" value="${item.price}" step="0.01" data-product-id="${item.product_id}"></td>
                         <td><input type="number" class="form-control" name="quantity" value="${item.quantity}" data-product-id="${item.product_id}"></td>
-                        <td><input type="text" class="form-control" name="product_name" value="${item.product_name}" data-product-id="${item.product_id}"></td>
+                        <td><input style="display:none" type="text" class="form-control" name="product_name" value="${item.product_name}" data-product-id="${item.product_id}"></td>
                     `;
                     orderItemsTableBody.appendChild(row);
                 });
