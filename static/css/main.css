@@ -1,4 +1,11 @@
-/*Template Name: Fruitkha - Responsive Bootstrap4 Shop TemplateTemplate URI: Description: Bootstrap template for fruits or any other kind of shopAuthor: Imran HossainAuthor URI: https://imransdesign.com/Version: 1.0*/
+/*
+Template Name: Fruitkha - Responsive Bootstrap4 Shop Template
+Template URI: 
+Description: Bootstrap template for fruits or any other kind of shop
+Author: Imran Hossain
+Author URI: https://imransdesign.com/
+Version: 1.0
+*/
 /* -----------------------------------------------------------------------------
 
 # Base - Genral & Typography
@@ -1241,6 +1248,66 @@ a.cart-btn:hover {
   color: #F28123;
 }
 
+
+
+
+/* product description hover */
+.product-desc {
+  position: relative;
+  display: inline-block;
+  max-width: 200px;
+}
+
+.product-desc .product-description {
+  visibility: hidden;
+  background-color: black;
+  width: 400px;
+  height: auto;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  text-overflow: initial;
+}
+
+.product-desc:hover .product-description {
+  visibility: visible;
+}
+
+
+
+/* testing hover */
+
+/* .product-desc {
+  position: relative;
+  display: inline-block;
+  max-width: 200px;
+  text-overflow: ellipsis;
+}
+
+.product-desc .product-description {
+  visibility: hidden;
+  background-color: black;
+  width: 400px;
+  height: auto;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.product-desc:hover .product-description {
+  visibility: visible;
+} */
+
+
+
+
+
 .recent-posts ul li {
   -webkit-transition: 0.3s;
   -o-transition: 0.3s;
@@ -1288,7 +1355,7 @@ ul.product-share li a {
 }
 
 ul.product-share li:hover a {
-  color: #F28123;
+  color: #af9783;
 }
 
 .service-menu ul li a {

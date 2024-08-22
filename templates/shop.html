@@ -2,7 +2,6 @@
 {% block title %} Products {% endblock %}
 
 
-
 {% block content %}
 
 <!-- breadcrumb-section -->
@@ -43,7 +42,16 @@
 						<a><img src="{{ url_for('serve_upload', filename=product.image_url) }}" alt="{{ product.name }}"></a>
 					</div>
 					<h3>{{ product.product_name }}</h3>
-					<p class="product-price"><span>Per Kg</span> ${{ product.price }} </p>
+					<!-- per kg -->
+					<p class="product-desc">
+						{{ product.description[:20] }}...
+						<span class="product-description">
+							{{ product.description }}
+						</span>
+					</p>
+					<p class="product-price">
+						{{product.price}}
+					</p>
 					<form method="POST" action="{{ url_for('add_cart', product_id=product.id) }}">
 						<a href="#" class="cart-btn" onclick="addToCart({{ product.id }})">
 							<i class="fas fa-shopping-cart"></i> Add to Cart
@@ -83,6 +91,7 @@
         form.submit();
     }
 </script>
+
 
 
 {% endblock %}
