@@ -725,6 +725,8 @@ def update_order_status(order_id):
         return jsonify({'error': 'Order not found'})
 
 
+
+
 # edit/update order through  admin
 @app.route('/update_order/<int:order_id>', methods=['POST'])
 def update_order(order_id):
@@ -817,6 +819,31 @@ def user_profile(user_id):
     
     user = User.query.filter_by(id=user_id).first()
     return render_template('user_profile.html', user=user)
+
+import stripe
+stripe.api_key = 'sk_test_tR3PYbcVNZZ796tH88S4VQ2u'
+
+# stripe payment gateway
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        user_id = session.get('user_id')
+        temp = []
+        items = {}
+        order_status = Order.query.filter_by(user_id=user_id, status="Processing")
+        for i in order_status:
+            temp.append(items)
+        checkout_session = stripe.checkout.Session.create(
+            temp,
+            mode='payment',
+            success_url='http://localhost:4000/' + 'success',
+            cancel_url='http://localhost:4000/' + 'cancel',
+        )
+    except Exception as e:
+        return str(e)
+
+    return redirect(checkout_session.url, code=303)
+
 
 
 if __name__ == '__main__':
